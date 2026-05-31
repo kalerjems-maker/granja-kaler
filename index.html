@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0a0f0d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Control Galpon</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0f0d;--s1:#111915;--s2:#162019;--border:#1e3028;--text:#e8f5ee;--muted:#6b8c78;--acc:#00c851;--acc2:#f0a500;--grn:#00c851;--red:#ff4444;--cold:#4fc3f7;--pur:#ce93d8;--wa:#25d366}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh}
+
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px}
+.login-logo{font-size:64px;margin-bottom:16px}
+.login-title{font-size:28px;font-weight:900;color:var(--text);margin-bottom:4px}
+.login-title span{color:var(--acc)}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:36px;font-weight:600}
+.login-btns{display:flex;flex-direction:column;gap:12px;width:100%;max-width:320px}
+.login-btn{border:2px solid var(--border);border-radius:16px;padding:18px;background:var(--s1);color:var(--text);font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:12px}
+.login-btn:active{transform:scale(.97)}
+.login-btn.jadis{border-color:var(--acc)}
+.login-btn.kener{border-color:var(--cold)}
+.login-btn.admin{border-color:var(--acc2)}
+.login-icon{font-size:28px}
+
+/* APP */
+.app{max-width:480px;margin:0 auto;padding:0 0 100px;display:none}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#0d2b1a,#0a1f12);padding:20px 16px 16px;border-bottom:2px solid var(--acc)}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.logo-row{display:flex;align-items:center;gap:10px}
+.logo-icon{font-size:30px}
+.logo-text h1{font-size:22px;font-weight:900;letter-spacing:-1px}
+.logo-text h1 span{color:var(--acc)}
+.logo-text .sub{font-size:11px;color:var(--muted);font-weight:600}
+.user-badge{background:rgba(0,200,81,.15);border:1px solid rgba(0,200,81,.3);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:800;color:var(--acc);cursor:pointer}
+.hdr-date{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:6px}
+
+/* SYNC */
+.sync-bar{background:rgba(0,200,81,.06);border:1px solid rgba(0,200,81,.15);margin:12px 14px 0;border-radius:10px;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;font-size:12px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--grn);display:inline-block;margin-right:7px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.sync-off .sync-dot{background:var(--red);animation:none}
+
+/* ALERTA STOCK */
+.alerta-stock{background:rgba(255,68,68,.08);border:1.5px solid rgba(255,68,68,.3);margin:10px 14px 0;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;color:var(--red);display:none}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px 14px 0}
+.stat{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px;position:relative;overflow:hidden}
+.stat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
+.stat:nth-child(1)::after{background:var(--grn)}
+.stat:nth-child(2)::after{background:var(--cold)}
+.stat:nth-child(3)::after{background:var(--acc2)}
+.stat:nth-child(4)::after{background:var(--pur)}
+.sl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:700}
+.sv{font-size:28px;font-weight:900;line-height:1}
+.sv.g{color:var(--grn)}.sv.y{color:var(--acc2)}.sv.r{color:var(--red)}.sv.b{color:var(--cold)}.sv.p{color:var(--pur);font-size:16px;margin-top:4px}
+.sv-sub{font-size:11px;color:var(--muted);margin-top:3px;font-weight:600}
+
+/* TABS */
+.tabs{display:flex;gap:0;margin:12px 14px 0;background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:4px;overflow-x:auto}
+.tab{flex:1;min-width:56px;padding:9px 4px;border:none;border-radius:9px;background:transparent;color:var(--muted);font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s}
+.tab.on{background:var(--acc);color:#000;box-shadow:0 2px 10px rgba(0,200,81,.3)}
+.tab.admin-tab{color:var(--acc2)}
+.tab.admin-tab.on{background:var(--acc2);color:#000}
+.page{display:none}.page.on{display:block}
+
+/* CARDS */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:16px;margin:12px 14px 0}
+.ct{font-size:12px;font-weight:800;color:var(--acc);margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:7px}
+.ct::before{content:'';width:3px;height:18px;background:var(--acc);border-radius:2px;display:block}
+.ct.y{color:var(--acc2)}.ct.y::before{background:var(--acc2)}
+
+/* FORMS */
+.fg{display:grid;gap:10px;grid-template-columns:1fr 1fr}
+.fc{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.field input,.field select{background:var(--bg);border:1.5px solid var(--border);border-radius:11px;padding:12px 14px;color:var(--text);font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;outline:none;transition:all .2s;width:100%}
+.field input:focus,.field select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(0,200,81,.1)}
+.field select option{background:#111915}
+
+/* BUTTONS */
+.btn{border:none;border-radius:13px;padding:14px 18px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s;width:100%;margin-top:10px;letter-spacing:.3px}
+.btn:active{transform:scale(.97)}
+.ba{background:linear-gradient(135deg,#f0a500,#e09000);color:#000;box-shadow:0 3px 12px rgba(240,165,0,.3)}
+.bc{background:linear-gradient(135deg,#4fc3f7,#0288d1);color:#000}
+.bg{background:linear-gradient(135deg,#00c851,#00a040);color:#000;box-shadow:0 3px 12px rgba(0,200,81,.3)}
+.br{background:linear-gradient(135deg,#ff4444,#cc0000);color:#fff}
+.bp{background:linear-gradient(135deg,#ce93d8,#9c27b0);color:#fff}
+
+/* TYPE SELECTOR */
+.tsel{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.tb{background:var(--bg);border:2px solid var(--border);border-radius:13px;padding:14px 8px;cursor:pointer;color:var(--muted);font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;text-align:center;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:6px}
+.tb.on{border-color:var(--acc);background:rgba(0,200,81,.08);color:var(--acc)}
+
+/* MONTO DISPLAY */
+.monto-display{font-size:30px;font-weight:900;text-align:center;padding:10px 0;min-height:52px;color:var(--grn)}
+
+/* MOVIMIENTOS */
+.mlist{display:flex;flex-direction:column;gap:7px}
+.mov{background:var(--s2);border:1px solid var(--border);border-radius:13px;padding:12px 14px;display:grid;grid-template-columns:32px 1fr auto;gap:8px;align-items:start;position:relative}
+.mi{font-size:20px;padding-top:2px}
+.mt{font-size:13px;font-weight:800}
+.mm{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}
+.mn{font-size:11px;color:var(--muted);margin-top:3px;font-style:italic}
+.mr{text-align:right}
+.mq{font-size:18px;font-weight:900;font-family:'JetBrains Mono',monospace}
+.ma{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px}
+.xbtn{position:absolute;top:8px;right:10px;background:rgba(255,68,68,.1);border:none;color:var(--red);cursor:pointer;font-size:12px;padding:3px 7px;border-radius:6px}
+
+/* TABLA */
+.ptable{width:100%;border-collapse:collapse;font-size:13px}
+.ptable th{text-align:left;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:6px 8px;border-bottom:1px solid var(--border);font-weight:800}
+.ptable td{padding:9px 8px;border-bottom:1px solid rgba(30,48,40,.5);font-weight:600}
+.ptable tr:last-child td{border-bottom:none}
+.pbar{background:var(--bg);border-radius:4px;height:6px;overflow:hidden;width:65px;display:inline-block;vertical-align:middle;margin-left:6px}
+.pfill{height:100%;border-radius:4px}
+
+/* RESUMEN */
+.rrow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(30,48,40,.4);font-size:14px}
+.rrow:last-child{border-bottom:none}
+.rl{color:var(--muted);font-weight:600}
+.rv{font-weight:800;font-family:'JetBrains Mono',monospace}
+.rv.g{color:var(--grn)}.rv.y{color:var(--acc2)}.rv.r{color:var(--red)}.rv.b{color:var(--cold)}
+.rg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 14px 0}
+.rg2 .card{margin:0}
+
+/* GRAFICA */
+.grafica-bar{display:flex;align-items:flex-end;gap:4px;height:120px;padding:0 4px}
+.gbar{flex:1;border-radius:6px 6px 0 0;min-width:20px;position:relative;transition:height .3s}
+.gbar-label{font-size:9px;color:var(--muted);text-align:center;margin-top:4px;font-weight:700}
+.gbar-val{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:800;white-space:nowrap}
+
+/* FILTRO FECHA */
+.filtro-row{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto}
+.fbtn{background:var(--s1);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .15s}
+.fbtn.on{background:var(--acc);color:#000;border-color:var(--acc)}
+
+/* MISC */
+.hint{background:rgba(240,165,0,.06);border:1.5px solid rgba(240,165,0,.2);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.ht{font-size:10px;color:var(--acc2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:800}
+.hg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.hi-l{font-size:10px;color:var(--muted);font-weight:700}
+.hi-v{font-size:16px;font-weight:900;color:var(--acc2);margin-top:3px}
+.info{font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:600;padding:9px 12px;background:rgba(0,200,81,.05);border-radius:9px;border-left:3px solid var(--acc)}
+.empty{text-align:center;color:var(--muted);padding:28px;font-size:13px;font-weight:600}
+.loading{text-align:center;color:var(--muted);padding:28px;font-size:13px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#00c851,#00a040);color:#000;padding:11px 22px;border-radius:12px;font-weight:800;font-size:13px;z-index:9999;box-shadow:0 4px 20px rgba(0,200,81,.4);white-space:nowrap;display:none}
+.seccion-admin{display:none}
+.seccion-admin.visible{display:block}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-logo">🐔</div>
+  <div class="login-title">GRANJA <span>KALER</span></div>
+  <div class="login-sub">Selecciona tu usuario</div>
+  <div class="login-btns">
+    <button class="login-btn jadis" onclick="login('Jadis')">
+      <span class="login-icon">👩</span>
+      <span>Jadis</span>
+    </button>
+    <button class="login-btn kener" onclick="login('Kener')">
+      <span class="login-icon">👨</span>
+      <span>Kener</span>
+    </button>
+    <button class="login-btn admin" onclick="loginAdmin()">
+      <span class="login-icon">🔐</span>
+      <span>Administrador</span>
+    </button>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="logo-row">
+        <div class="logo-icon">🐔</div>
+        <div class="logo-text">
+          <h1>GRANJA <span>KALER</span></h1>
+          <div class="sub">Control de Gallinas Descarte</div>
+        </div>
+      </div>
+      <div class="user-badge" id="user-badge" onclick="cerrarSesion()">👤 —</div>
+    </div>
+    <div class="hdr-date" id="fecha-hdr"></div>
+  </div>
+
+  <div class="sync-bar" id="sync-bar">
+    <div><span class="sync-dot" id="sync-dot"></span><span id="sync-txt">Conectando...</span></div>
+    <span style="font-size:10px;color:var(--muted)" id="sync-time"></span>
+  </div>
+
+  <div class="alerta-stock" id="alerta-stock">⚠️ Stock enfriador bajo</div>
+
+  <div class="stats">
+    <div class="stat"><div class="sl">Aves galpon</div><div class="sv g" id="stat-vivas">0</div></div>
+    <div class="stat"><div class="sl">Enfriador</div><div class="sv b" id="stat-enf">0</div></div>
+    <div class="stat">
+      <div class="sl">Huevos disp.</div>
+      <div class="sv y" id="stat-huevos">0</div>
+      <div class="sv-sub"><span id="stat-canastas">0</span> canastas</div>
+    </div>
+    <div class="stat"><div class="sl">% Postura</div><div class="sv p" id="stat-pct">-</div></div>
+  </div>
+
+  <div class="tabs" id="tabs-bar">
+    <button class="tab on" onclick="setTab('ventas')">💰 Ventas</button>
+    <button class="tab" onclick="setTab('compras')">🛒 Compras</button>
+    <button class="tab" onclick="setTab('postura')">🥚 Postura</button>
+    <button class="tab" onclick="setTab('alimento')">🌽 Alimento</button>
+    <button class="tab admin-tab" id="tab-admin" onclick="setTab('admin')" style="display:none">📊 Admin</button>
+  </div>
+
+  <!-- VENTAS -->
+  <div id="page-ventas" class="page on">
+    <div class="card">
+      <div class="ct">Venta de gallinas</div>
+      <div class="tsel">
+        <button class="tb on" id="tb-viva" onclick="setTipoVenta('viva')">
+          <span style="font-size:36px">🐓</span><span>Viva</span>
+        </button>
+        <button class="tb" id="tb-muerta" onclick="setTipoVenta('muerta')">
+          <span style="font-size:36px">🍗</span><span>Enfriador</span>
+        </button>
+      </div>
+      <div class="info" id="info-venta-gallina">Disponible: 0 aves</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="vg-fecha"></div>
+        <div class="field"><label>Vendedor</label><input type="text" id="vg-usuario" list="lista-vendedores"></div>
+        <div class="field"><label>Cliente</label><input type="text" id="vg-cliente" placeholder="Nombre del cliente"></div>
+        <div class="field"><label>Cantidad</label><input type="number" min="1" id="vg-cantidad" placeholder="0"></div>
+        <div class="field fc"><label>Precio unitario</label><input type="number" id="vg-precio" placeholder="$0"></div>
+        <div class="field fc"><label>Monto total</label><input id="vg-monto" style="display:none"><div class="monto-display" id="vg-monto-fmt"></div></div>
+        <div class="field fc"><label>Nota</label><input type="text" id="vg-nota" placeholder="Observaciones..."></div>
+      </div>
+      <button class="btn bg" onclick="addVentaGallina()">💰 Registrar venta</button>
+    </div>
+
+    <div class="card">
+      <div class="ct">Venta de huevos</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        <div style="background:rgba(240,165,0,.08);border:1.5px solid rgba(240,165,0,.2);border-radius:12px;padding:12px;text-align:center">
+          <div class="sl">Disponibles</div>
+          <div style="font-size:28px;font-weight:900;color:var(--acc2)" id="stock-huevos-u">0</div>
+          <div style="font-size:11px;color:var(--muted);font-weight:600">unidades</div>
+        </div>
+        <div style="background:rgba(240,165,0,.08);border:1.5px solid rgba(240,165,0,.2);border-radius:12px;padding:12px;text-align:center">
+          <div class="sl">Canastas x30</div>
+          <div style="font-size:28px;font-weight:900;color:var(--acc2)" id="stock-huevos-c">0</div>
+          <div style="font-size:11px;color:var(--muted);font-weight:600">canastas</div>
+        </div>
+      </div>
+      <div class="tsel">
+        <button class="tb on" id="tb-canasta" onclick="setTipoHuevo('canasta')">🧺 Canasta (30)</button>
+        <button class="tb" id="tb-suelto" onclick="setTipoHuevo('suelto')">🥚 Suelto</button>
+      </div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="vh-fecha"></div>
+        <div class="field"><label>Vendedor</label><input type="text" id="vh-usuario" list="lista-vendedores"></div>
+        <div class="field fc"><label>Cliente</label><input type="text" id="vh-cliente" placeholder="Nombre del cliente"></div>
+        <div class="field"><label id="lbl-cant-huevo">Canastas</label><input type="number" min="1" id="vh-cantidad" placeholder="0"></div>
+        <div class="field"><label id="lbl-precio-huevo">Precio canasta</label><input type="number" id="vh-precio" placeholder="$0"></div>
+        <div class="field fc"><label>Monto total</label><input id="vh-monto" style="display:none"><div class="monto-display" id="vh-monto-fmt" style="color:var(--acc2)"></div></div>
+      </div>
+      <button class="btn ba" onclick="addVentaHuevo()">💰 Registrar venta</button>
+    </div>
+
+    <div class="card">
+      <div class="ct">Historial de ventas</div>
+      <div class="filtro-row" id="filtro-ventas">
+        <button class="fbtn on" onclick="setFiltroVentas('hoy',this)">Hoy</button>
+        <button class="fbtn" onclick="setFiltroVentas('semana',this)">Semana</button>
+        <button class="fbtn" onclick="setFiltroVentas('mes',this)">Mes</button>
+        <button class="fbtn" onclick="setFiltroVentas('todo',this)">Todo</button>
+      </div>
+      <div id="totales-vendedores" style="margin-bottom:10px"></div>
+      <div class="mlist" id="lista-ventas"><div class="loading">Cargando...</div></div>
+    </div>
+  </div>
+
+  <!-- COMPRAS -->
+  <div id="page-compras" class="page">
+    <div class="card">
+      <div class="ct">Compra gallinas vivas</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="cv-fecha"></div>
+        <div class="field"><label>Cantidad</label><input type="number" min="1" id="cv-cantidad" placeholder="0"></div>
+        <div class="field"><label>Precio unitario</label><input type="number" id="cv-precio" placeholder="$0"></div>
+        <div class="field"><label>Monto total</label><input id="cv-monto" style="display:none"><div class="monto-display" id="cv-monto-fmt" style="font-size:22px"></div></div>
+        <div class="field fc"><label>Nota</label><input type="text" id="cv-nota" placeholder="Proveedor..."></div>
+      </div>
+      <button class="btn bg" onclick="addCompraViva()">Registrar compra vivas</button>
+    </div>
+    <div class="card">
+      <div class="ct">Compra gallinas muertas (enfriador)</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="cm-fecha"></div>
+        <div class="field"><label>Cantidad</label><input type="number" min="1" id="cm-cantidad" placeholder="0"></div>
+        <div class="field"><label>Precio unitario</label><input type="number" id="cm-precio" placeholder="$0"></div>
+        <div class="field"><label>Monto total</label><input id="cm-monto" style="display:none"><div class="monto-display" id="cm-monto-fmt" style="font-size:22px;color:var(--cold)"></div></div>
+        <div class="field fc"><label>Nota</label><input type="text" id="cm-nota" placeholder="Proveedor..."></div>
+      </div>
+      <button class="btn bc" onclick="addCompraMuerta()">Registrar compra muertas</button>
+    </div>
+    <div class="card">
+      <div class="ct">Mortalidad (aves muertas sin sacrificio)</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="mort-fecha"></div>
+        <div class="field"><label>Cantidad</label><input type="number" min="1" id="mort-cantidad" placeholder="0"></div>
+        <div class="field fc"><label>Causa</label><input type="text" id="mort-nota" placeholder="Enfermedad, accidente..."></div>
+      </div>
+      <button class="btn br" onclick="addMortalidad()">Registrar mortalidad</button>
+    </div>
+    <div class="card">
+      <div class="ct">Historial compras y mortalidad</div>
+      <div class="mlist" id="lista-compras"><div class="loading">Cargando...</div></div>
+    </div>
+  </div>
+
+  <!-- POSTURA -->
+  <div id="page-postura" class="page">
+    <div class="card">
+      <div class="ct">Registro diario postura</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="pos-fecha"></div>
+        <div class="field"><label>Huevos recolectados</label><input type="number" min="0" id="pos-huevos" placeholder="0"></div>
+        <div class="field fc"><label>Registrado por</label><input type="text" id="pos-usuario" list="lista-vendedores"></div>
+      </div>
+      <button class="btn ba" onclick="addPostura()">Registrar postura</button>
+    </div>
+    <div class="card">
+      <div class="ct">Tabla de postura</div>
+      <div style="overflow-x:auto"><table class="ptable">
+        <thead><tr><th>Fecha / Hora</th><th>Huevos</th><th>% Postura</th><th>Por</th><th></th></tr></thead>
+        <tbody id="tabla-postura"><tr><td colspan="5" class="loading">Cargando...</td></tr></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ALIMENTO -->
+  <div id="page-alimento" class="page">
+    <div class="card" style="background:linear-gradient(135deg,rgba(0,200,81,.08),rgba(0,160,64,.04));border-color:rgba(0,200,81,.2)">
+      <div class="ct">Costo del dia de hoy</div>
+      <div style="text-align:center;padding:8px 0">
+        <div style="font-size:44px;font-weight:900;color:var(--grn)" id="costo-hoy-val">$0</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;font-weight:600" id="costo-hoy-desc">Sin alimento registrado hoy</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ct">Registrar alimento de hoy</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="al-fecha"></div>
+        <div class="field"><label>Bultos echados</label><input type="number" min="0" step="0.5" id="al-bultos" placeholder="0" oninput="actualizarCostoAlim()"></div>
+        <div class="field fc"><label id="lbl-costo-alim">Costo: $0</label><input type="text" id="al-nota" placeholder="Observaciones..."></div>
+      </div>
+      <button class="btn ba" onclick="addAlimento()">Registrar alimento</button>
+    </div>
+    <div class="card">
+      <div class="ct">Historial alimento</div>
+      <div class="mlist" id="lista-alimento"><div class="loading">Cargando...</div></div>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div id="page-admin" class="page">
+    <div class="rg2">
+      <div class="card" style="margin:0">
+        <div class="ct y">Galpon</div>
+        <div class="rrow"><span class="rl">Compradas</span><span class="rv g" id="res-cv">0</span></div>
+        <div class="rrow"><span class="rl">Mortalidad</span><span class="rv r" id="res-mort">0</span></div>
+        <div class="rrow"><span class="rl">Vendidas</span><span class="rv y" id="res-vv">0</span></div>
+        <div class="rrow"><span class="rl">Existencia</span><span class="rv g" id="res-exist">0</span></div>
+      </div>
+      <div class="card" style="margin:0">
+        <div class="ct y">Enfriador</div>
+        <div class="rrow"><span class="rl">Compradas</span><span class="rv b" id="res-cm">0</span></div>
+        <div class="rrow"><span class="rl">Vendidas</span><span class="rv y" id="res-vm">0</span></div>
+        <div class="rrow"><span class="rl">Stock</span><span class="rv b" id="res-stock">0</span></div>
+      </div>
+    </div>
+
+    <!-- GRAFICAS -->
+    <div class="card">
+      <div class="ct y">Ventas ultimos 7 dias</div>
+      <div class="grafica-bar" id="grafica-ventas"></div>
+      <div style="display:flex;gap:0" id="grafica-labels"></div>
+    </div>
+
+    <div class="card">
+      <div class="ct y">Financiero</div>
+      <div class="filtro-row">
+        <button class="fbtn on" onclick="setFiltroAdmin('hoy',this)">Hoy</button>
+        <button class="fbtn" onclick="setFiltroAdmin('semana',this)">Semana</button>
+        <button class="fbtn" onclick="setFiltroAdmin('mes',this)">Mes</button>
+        <button class="fbtn" onclick="setFiltroAdmin('todo',this)">Todo</button>
+      </div>
+      <div class="rrow"><span class="rl">Venta gallina viva</span><span class="rv g" id="res-ingGV">-</span></div>
+      <div class="rrow"><span class="rl">Venta enfriador</span><span class="rv g" id="res-ingGM">-</span></div>
+      <div class="rrow"><span class="rl">Venta huevos</span><span class="rv g" id="res-ingH">-</span></div>
+      <div class="rrow"><span class="rl">Egreso aves vivas</span><span class="rv r" id="res-egrV">-</span></div>
+      <div class="rrow"><span class="rl">Egreso enfriador</span><span class="rv r" id="res-egrM">-</span></div>
+      <div class="rrow"><span class="rl">Egreso alimento</span><span class="rv r" id="res-egrAl">-</span></div>
+      <div class="rrow" style="margin-top:6px">
+        <span class="rl" style="font-weight:800;color:var(--text);font-size:15px">Balance neto</span>
+        <span class="rv" id="res-balance" style="font-size:20px">-</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct y">Ventas por persona</div>
+      <div id="res-personas"></div>
+    </div>
+
+    <div class="card">
+      <div class="ct y">Postura</div>
+      <div class="rrow"><span class="rl">Total recolectados</span><span class="rv y" id="res-prec">0</span></div>
+      <div class="rrow"><span class="rl">Total vendidos</span><span class="rv g" id="res-pvend">0</span></div>
+      <div class="rrow"><span class="rl">Promedio diario</span><span class="rv y" id="res-pprom">0</span></div>
+    </div>
+
+    <div class="card">
+      <div class="ct y">Exportar datos</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px;font-weight:600">Copia de seguridad completa en Excel.</div>
+      <button class="btn ba" onclick="exportarExcel()" style="margin-top:0">📥 Descargar Excel</button>
+    </div>
+  </div>
+
+</div>
+<div class="toast" id="toast"></div>
+<datalist id="lista-vendedores"><option value="Jadis"><option value="Kener"></datalist>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDkiU9sjBdivX-CPJmEL_14M5ph8pLphn4",
+  authDomain: "control-galpon-63f35.firebaseapp.com",
+  projectId: "control-galpon-63f35",
+  storageBucket: "control-galpon-63f35.firebasestorage.app",
+  messagingSenderId: "423009332493",
+  appId: "1:423009332493:web:eaca9154b5f8010b9b4e47"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const BULTO_KG=40, BULTO_PRECIO=77500, HUEVOS_CANASTA=30;
+const WA="573107036496";
+const CLAVE_ADMIN="kaler2025";
+const ALERTA_STOCK_MIN=10;
+
+let USUARIO="";
+let ES_ADMIN=false;
+let tipoVenta="viva";
+let tipoHuevo="canasta";
+let filtroVentas="hoy";
+let filtroAdmin="hoy";
+
+let DATA={
+  compras_vivas:[], compras_muertas:[], mortalidad:[],
+  ventas_gallina_viva:[], ventas_gallina_muerta:[], ventas_huevo:[],
+  postura:[], alimento:[]
+};
+
+const fmtM = n=>(!n&&n!==0)?"-":"$"+Math.round(n).toLocaleString("es-CO");
+const fmtD = iso=>!iso?"":new Date(iso+"T12:00:00").toLocaleDateString("es-CO",{day:"2-digit",month:"short"});
+const horaActual=()=>new Date().toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});
+const fechaActual=()=>new Date().toLocaleDateString("es-CO",{day:"2-digit",month:"2-digit",year:"numeric"});
+const hoy=()=>new Date().toISOString().split("T")[0];
+const sum=(arr,fn)=>(arr||[]).reduce((s,x)=>s+(fn(x)||0),0);
+const getVal=id=>document.getElementById(id)?.value||"";
+const clearF=ids=>ids.forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+
+const calcVivas=()=>Math.max(0,sum(DATA.compras_vivas,x=>x.cantidad)-sum(DATA.ventas_gallina_viva,x=>x.cantidad)-sum(DATA.mortalidad,x=>x.cantidad));
+const calcEnf=()=>Math.max(0,sum(DATA.compras_muertas,x=>x.cantidad)-sum(DATA.ventas_gallina_muerta,x=>x.cantidad));
+
+function fechaEnRango(fecha, rango){
+  const hoyStr=hoy();
+  if(rango==="hoy") return fecha===hoyStr;
+  if(rango==="semana"){
+    const d=new Date(); d.setDate(d.getDate()-7);
+    return fecha>=d.toISOString().split("T")[0];
+  }
+  if(rango==="mes"){
+    const d=new Date(); d.setDate(d.getDate()-30);
+    return fecha>=d.toISOString().split("T")[0];
+  }
+  return true;
+}
+
+// LOGIN
+window.login = (usuario) => {
+  USUARIO=usuario; ES_ADMIN=false;
+  iniciarApp();
+};
+
+window.loginAdmin = () => {
+  const clave=prompt("Clave administrador:");
+  if(clave!==CLAVE_ADMIN) return msg("Clave incorrecta");
+  USUARIO="Admin"; ES_ADMIN=true;
+  iniciarApp();
+};
+
+window.cerrarSesion = () => {
+  if(!confirm("Cerrar sesion?")) return;
+  document.getElementById("app").style.display="none";
+  document.getElementById("login-screen").style.display="flex";
+  USUARIO=""; ES_ADMIN=false;
+};
+
+function iniciarApp(){
+  document.getElementById("login-screen").style.display="none";
+  document.getElementById("app").style.display="block";
+  document.getElementById("user-badge").textContent="👤 "+USUARIO;
+  if(ES_ADMIN) document.getElementById("tab-admin").style.display="";
+  else document.getElementById("tab-admin").style.display="none";
+
+  // set fechas
+  ["vg-fecha","vh-fecha","cv-fecha","cm-fecha","mort-fecha","pos-fecha","al-fecha"].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value=hoy();
+  });
+  document.getElementById("vg-usuario").value=USUARIO;
+  document.getElementById("vh-usuario").value=USUARIO;
+  document.getElementById("pos-usuario").value=USUARIO;
+
+  document.getElementById("fecha-hdr").textContent=
+    new Date().toLocaleDateString("es-CO",{day:"2-digit",month:"long",year:"numeric"}).toUpperCase();
+
+  iniciarListeners();
+}
+
+// FIREBASE LISTENERS
+function iniciarListeners(){
+  const cols=[
+    ["compras_vivas","compras_vivas"],
+    ["compras_muertas","compras_muertas"],
+    ["mortalidad","mortalidad"],
+    ["ventas_gallina_viva","ventas_gallina_viva"],
+    ["ventas_gallina_muerta","ventas_gallina_muerta"],
+    ["ventas_huevo","ventas_huevo"],
+    ["postura","postura"],
+    ["alimento","alimento"],
+  ];
+  cols.forEach(([col,key])=>{
+    const q=query(collection(db,col),orderBy("ts","desc"));
+    onSnapshot(q,snap=>{
+      DATA[key]=snap.docs.map(d=>({id:d.id,...d.data()}));
+      renderAll();
+    },err=>{setSyncStatus(false);});
+  });
+  setSyncStatus(true);
+}
+
+function setSyncStatus(ok){
+  const bar=document.getElementById("sync-bar");
+  const dot=document.getElementById("sync-dot");
+  const txt=document.getElementById("sync-txt");
+  const time=document.getElementById("sync-time");
+  if(ok){
+    bar?.classList.remove("sync-off");
+    if(dot){dot.style.background="var(--grn)";dot.style.animation="pulse 2s infinite";}
+    if(txt) txt.textContent="Sincronizado en tiempo real";
+    if(time) time.textContent=horaActual();
+  } else {
+    bar?.classList.add("sync-off");
+    if(dot){dot.style.background="var(--red)";dot.style.animation="none";}
+    if(txt) txt.textContent="Sin conexion";
+  }
+}
+
+async function addDoc2(colName, data){
+  try{
+    await addDoc(collection(db,colName),{...data,ts:serverTimestamp()});
+    setSyncStatus(true); return true;
+  }catch(e){setSyncStatus(false); return false;}
+}
+
+async function delDoc(colName,id){
+  try{await deleteDoc(doc(db,colName,id));}catch(e){}
+}
+
+window.delItem=(col,id)=>{
+  const clave=prompt("Clave administrador:");
+  if(clave!==CLAVE_ADMIN) return msg("Clave incorrecta");
+  delDoc(col,id);
+};
+
+// WHATSAPP AUTO
+function waEnviar(tipo,cant,monto,vendedor,cliente){
+  const txt=encodeURIComponent(
+    "*VENTA REGISTRADA* ✅\n"+
+    "📦 Tipo: "+tipo+"\n"+
+    "🔢 Cantidad: "+cant+"\n"+
+    "💰 Monto: "+(monto?"$"+Math.round(monto).toLocaleString("es-CO"):"Sin registrar")+"\n"+
+    "👤 Vendedor: "+vendedor+"\n"+
+    (cliente?"🛒 Cliente: "+cliente+"\n":"")+
+    "📅 "+fechaActual()+" "+horaActual()
+  );
+  window.location.href="https://wa.me/"+WA+"?text="+txt;
+}
+
+// EFECTOS
+function efectoVenta(){
+  if(navigator.vibrate) navigator.vibrate([100,50,100]);
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const t=ctx.currentTime;
+    const o1=ctx.createOscillator(),g1=ctx.createGain();
+    o1.connect(g1);g1.connect(ctx.destination);
+    o1.frequency.setValueAtTime(1200,t);o1.frequency.exponentialRampToValueAtTime(800,t+0.1);
+    g1.gain.setValueAtTime(0.3,t);g1.gain.exponentialRampToValueAtTime(0.001,t+0.3);
+    o1.start(t);o1.stop(t+0.3);
+    const o2=ctx.createOscillator(),g2=ctx.createGain();
+    o2.connect(g2);g2.connect(ctx.destination);
+    o2.frequency.setValueAtTime(1600,t+0.15);o2.frequency.exponentialRampToValueAtTime(1000,t+0.35);
+    g2.gain.setValueAtTime(0.2,t+0.15);g2.gain.exponentialRampToValueAtTime(0.001,t+0.45);
+    o2.start(t+0.15);o2.stop(t+0.45);
+  }catch(e){}
+}
+
+function msg(txt){
+  const t=document.getElementById("toast");
+  if(!t) return;
+  t.textContent=txt;t.style.display="block";
+  setTimeout(()=>t.style.display="none",2500);
+}
+
+// TABS
+window.setTab=tab=>{
+  const tabs=["ventas","compras","postura","alimento","admin"];
+  document.querySelectorAll(".tab").forEach((b,i)=>b.classList.toggle("on",tabs[i]===tab));
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("on"));
+  const page=document.getElementById("page-"+tab);
+  if(page) page.classList.add("on");
+  if(tab==="admin") renderAdmin();
+};
+
+window.setTipoVenta=t=>{
+  tipoVenta=t;
+  document.getElementById("tb-viva")?.classList.toggle("on",t==="viva");
+  document.getElementById("tb-muerta")?.classList.toggle("on",t==="muerta");
+  const v=calcVivas(),e=calcEnf();
+  const inf=document.getElementById("info-venta-gallina");
+  if(inf) inf.textContent=t==="viva"?"Disponible galpon: "+v+" aves":"Disponible enfriador: "+e+" aves";
+};
+
+window.setTipoHuevo=t=>{
+  tipoHuevo=t;
+  document.getElementById("tb-canasta")?.classList.toggle("on",t==="canasta");
+  document.getElementById("tb-suelto")?.classList.toggle("on",t==="suelto");
+  const lc=document.getElementById("lbl-cant-huevo");
+  const lp=document.getElementById("lbl-precio-huevo");
+  if(lc) lc.textContent=t==="canasta"?"Canastas":"Huevos";
+  if(lp) lp.textContent=t==="canasta"?"Precio canasta":"Precio unitario";
+};
+
+window.setFiltroVentas=(f,btn)=>{
+  filtroVentas=f;
+  document.querySelectorAll("#filtro-ventas .fbtn").forEach(b=>b.classList.remove("on"));
+  btn.classList.add("on");
+  renderVentas();
+};
+
+window.setFiltroAdmin=(f,btn)=>{
+  filtroAdmin=f;
+  document.querySelectorAll("#page-admin .filtro-row .fbtn").forEach(b=>b.classList.remove("on"));
+  btn.classList.add("on");
+  renderAdmin();
+};
+
+window.actualizarCostoAlim=()=>{
+  const b=+getVal("al-bultos")||0;
+  const lbl=document.getElementById("lbl-costo-alim");
+  if(lbl) lbl.textContent="Costo: "+(b?fmtM(b*BULTO_PRECIO):"$0");
+};
+
+// CALCULO MONTO AUTO
+function calcMonto(cantId,precioId,montoId,fmtId,multiplicador){
+  const c=+getVal(cantId)||0;
+  const p=+getVal(precioId)||0;
+  const total=c&&p?c*p*(multiplicador||1):0;
+  const mi=document.getElementById(montoId);
+  const mf=document.getElementById(fmtId);
+  if(mi) mi.value=total||"";
+  if(mf) mf.textContent=total?"$"+total.toLocaleString("es-CO"):"";
+}
+
+// HANDLERS
+window.addVentaGallina=async()=>{
+  const cant=+getVal("vg-cantidad");
+  if(!cant||cant<=0) return msg("Ingresa la cantidad");
+  const v=calcVivas(),e=calcEnf();
+  if(tipoVenta==="viva"&&cant>v) return msg("Solo hay "+v+" aves vivas");
+  if(tipoVenta==="muerta"&&cant>e) return msg("Solo hay "+e+" en enfriador");
+  const col=tipoVenta==="viva"?"ventas_gallina_viva":"ventas_gallina_muerta";
+  const monto=+getVal("vg-monto")||null;
+  const usuario=getVal("vg-usuario")||USUARIO;
+  const cliente=getVal("vg-cliente");
+  const label=tipoVenta==="viva"?"Gallina viva":"Gallina enfriador";
+  efectoVenta();
+  const item={fecha:getVal("vg-fecha")||hoy(),hora:horaActual(),cantidad:cant,precio_unitario:+getVal("vg-precio")||null,monto_total:monto,usuario,cliente,nota:getVal("vg-nota"),tipo_gallina:tipoVenta};
+  addDoc2(col,item);
+  clearF(["vg-cantidad","vg-precio","vg-monto","vg-nota","vg-cliente"]);
+  const mf=document.getElementById("vg-monto-fmt"); if(mf) mf.textContent="";
+  msg("Venta registrada ✅");
+  setTimeout(()=>waEnviar(label,cant,monto,usuario,cliente),1500);
+};
+
+window.addVentaHuevo=async()=>{
+  const cant=+getVal("vh-cantidad");
+  if(!cant||cant<=0) return msg("Ingresa la cantidad");
+  const monto=+getVal("vh-monto")||null;
+  const usuario=getVal("vh-usuario")||USUARIO;
+  const cliente=getVal("vh-cliente");
+  const label=tipoHuevo==="canasta"?"Huevos canasta x30":"Huevos suelto";
+  efectoVenta();
+  const item={fecha:getVal("vh-fecha")||hoy(),hora:horaActual(),tipo:tipoHuevo,cantidad_huevos:cant,precio_huevo:+getVal("vh-precio")||null,monto_total:monto,usuario,cliente};
+  addDoc2("ventas_huevo",item);
+  clearF(["vh-cantidad","vh-precio","vh-monto","vh-cliente"]);
+  const mf=document.getElementById("vh-monto-fmt"); if(mf) mf.textContent="";
+  msg("Venta registrada ✅");
+  setTimeout(()=>waEnviar(label,cant,monto,usuario,cliente),1500);
+};
+
+window.addCompraViva=async()=>{
+  const cant=+getVal("cv-cantidad");
+  if(!cant||cant<=0) return msg("Ingresa cantidad");
+  const ok=await addDoc2("compras_vivas",{fecha:getVal("cv-fecha")||hoy(),hora:horaActual(),cantidad:cant,precio_unitario:+getVal("cv-precio")||null,monto_total:+getVal("cv-monto")||null,nota:getVal("cv-nota")});
+  if(ok){clearF(["cv-cantidad","cv-precio","cv-monto","cv-nota"]);const mf=document.getElementById("cv-monto-fmt");if(mf)mf.textContent="";msg("Compra registrada");}
+};
+
+window.addCompraMuerta=async()=>{
+  const cant=+getVal("cm-cantidad");
+  if(!cant||cant<=0) return msg("Ingresa cantidad");
+  const ok=await addDoc2("compras_muertas",{fecha:getVal("cm-fecha")||hoy(),hora:horaActual(),cantidad:cant,precio_unitario:+getVal("cm-precio")||null,monto_total:+getVal("cm-monto")||null,nota:getVal("cm-nota")});
+  if(ok){clearF(["cm-cantidad","cm-precio","cm-monto","cm-nota"]);const mf=document.getElementById("cm-monto-fmt");if(mf)mf.textContent="";msg("Compra registrada");}
+};
+
+window.addMortalidad=async()=>{
+  const cant=+getVal("mort-cantidad");
+  if(!cant||cant<=0) return msg("Ingresa cantidad");
+  const ok=await addDoc2("mortalidad",{fecha:getVal("mort-fecha")||hoy(),hora:horaActual(),cantidad:cant,nota:getVal("mort-nota")});
+  if(ok){clearF(["mort-cantidad","mort-nota"]);msg("Mortalidad registrada");}
+};
+
+window.addPostura=async()=>{
+  const h=getVal("pos-huevos");
+  if(h===""||+h<0) return msg("Ingresa huevos");
+  const ok=await addDoc2("postura",{fecha:getVal("pos-fecha")||hoy(),hora:horaActual(),huevos:+h,usuario:getVal("pos-usuario")||USUARIO});
+  if(ok){document.getElementById("pos-huevos").value="";msg("Postura registrada");}
+};
+
+window.addAlimento=async()=>{
+  const b=+getVal("al-bultos");
+  if(!b||b<=0) return msg("Ingresa bultos");
+  const ok=await addDoc2("alimento",{fecha:getVal("al-fecha")||hoy(),hora:horaActual(),bultos:b,costo:b*BULTO_PRECIO,nota:getVal("al-nota")});
+  if(ok){clearF(["al-bultos","al-nota"]);const lbl=document.getElementById("lbl-costo-alim");if(lbl)lbl.textContent="Costo: $0";msg("Alimento registrado");}
+};
+
+// EXPORT
+window.exportarExcel=()=>{
+  let csv="";
+  const sec=(titulo,cols,rows)=>{
+    csv+=titulo+"\n"+cols.join(",")+"\n";
+    rows.forEach(r=>csv+=r+"\n");
+    csv+="\n";
+  };
+  sec("VENTAS GALLINA VIVA",["Fecha","Hora","Vendedor","Cliente","Cantidad","Precio","Monto","Nota"],
+    (DATA.ventas_gallina_viva||[]).map(r=>`${r.fecha||""},${r.hora||""},${r.usuario||""},${r.cliente||""},${r.cantidad||0},${r.precio_unitario||0},${r.monto_total||0},"${r.nota||""}"`));
+  sec("VENTAS ENFRIADOR",["Fecha","Hora","Vendedor","Cliente","Cantidad","Precio","Monto","Nota"],
+    (DATA.ventas_gallina_muerta||[]).map(r=>`${r.fecha||""},${r.hora||""},${r.usuario||""},${r.cliente||""},${r.cantidad||0},${r.precio_unitario||0},${r.monto_total||0},"${r.nota||""}"`));
+  sec("VENTAS HUEVOS",["Fecha","Hora","Vendedor","Cliente","Tipo","Cantidad","Precio","Monto"],
+    (DATA.ventas_huevo||[]).map(r=>`${r.fecha||""},${r.hora||""},${r.usuario||""},${r.cliente||""},${r.tipo||""},${r.cantidad_huevos||0},${r.precio_huevo||0},${r.monto_total||0}`));
+  sec("COMPRAS VIVAS",["Fecha","Hora","Cantidad","Precio","Monto","Nota"],
+    (DATA.compras_vivas||[]).map(r=>`${r.fecha||""},${r.hora||""},${r.cantidad||0},${r.precio_unitario||0},${r.monto_total||0},"${r.nota||""}"`));
+  sec("COMPRAS ENFRIADOR",["Fecha","Hora","Cantidad","Precio","Monto","Nota"],
+    (DATA.compras_muertas||[]).map(r=>`${r.fecha||""},${r.hora||""},${r.cantidad||0},${r.precio_unitario||0},${r.monto_total||0},"${r.nota||""}"`));
+  sec("MORTALIDAD",["Fecha","Hora","Cantidad","Causa"],
+    (DATA.mortalidad||[]).map(r=>`${r.fecha||""},${r.hora||""},${r.cantidad||0},"${r.nota||""}"`));
+  sec("POSTURA",["Fecha","Hora","Huevos","Por"],
+    (DATA.postura||[]).map(r=>`${r.fecha||""},${r.hora||""},${r.huevos||0},${r.usuario||""}`));
+  sec("ALIMENTO",["Fecha","Hora","Bultos","Costo","Nota"],
+    (DATA.alimento||[]).map(r=>`${r.fecha||""},${r.hora||""},${r.bultos||0},${r.costo||0},"${r.nota||""}"`));
+  const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8;"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=url;a.download="galpon-"+hoy()+".csv";a.click();
+  URL.revokeObjectURL(url);msg("Archivo descargado");
+};
+
+// RENDER
+function movHTML(ico,titulo,col,qty,monto,fecha,hora,usuario,nota,colName,id,extra){
+  return`<div class="mov">
+    <div class="mi">${ico}</div>
+    <div>
+      <div class="mt" style="color:${col}">${titulo}${usuario?" · "+usuario:""}</div>
+      <div class="mm">${fmtD(fecha)}${hora?" · "+hora:""}</div>
+      ${extra?`<div class="mn">🛒 ${extra}</div>`:""}
+      ${nota?`<div class="mn">${nota}</div>`:""}
+    </div>
+    <div class="mr">
+      <div class="mq" style="color:${col}">${qty}</div>
+      ${monto?`<div class="ma">${fmtM(monto)}</div>`:""}
+    </div>
+    <button class="xbtn" onclick="delItem('${colName}','${id}')">✕</button>
+  </div>`;
+}
+
+function renderStats(){
+  const v=calcVivas(),e=calcEnf();
+  document.getElementById("stat-vivas").textContent=v;
+  document.getElementById("stat-enf").textContent=e;
+
+  // alerta stock
+  const alerta=document.getElementById("alerta-stock");
+  if(alerta) alerta.style.display=e<ALERTA_STOCK_MIN&&e>0?"block":"none";
+
+  const ultP=(DATA.postura||[])[0];
+  const pct=ultP?((+getPct(ultP.huevos,v))).toFixed(1)+"%":"-";
+  document.getElementById("stat-pct").textContent=pct;
+
+  const totalPostura=sum(DATA.postura,x=>x.huevos);
+  const totalVendidosH=sum(DATA.ventas_huevo,x=>x.tipo==="canasta"?(x.cantidad_huevos||0)*HUEVOS_CANASTA:(x.cantidad_huevos||0));
+  const stockH=Math.max(0,totalPostura-totalVendidosH);
+  const stockC=Math.floor(stockH/HUEVOS_CANASTA);
+  document.getElementById("stat-huevos").textContent=stockH;
+  document.getElementById("stat-canastas").textContent=stockC;
+  const su=document.getElementById("stock-huevos-u"); if(su) su.textContent=stockH;
+  const sc=document.getElementById("stock-huevos-c"); if(sc) sc.textContent=stockC;
+
+  // costo hoy
+  const todayStr=hoy();
+  const alimentoHoy=(DATA.alimento||[]).filter(a=>a.fecha===todayStr);
+  const costoHoy=alimentoHoy.reduce((s,a)=>s+a.costo,0);
+  const bultosHoy=alimentoHoy.reduce((s,a)=>s+a.bultos,0);
+  const cv=document.getElementById("costo-hoy-val"); if(cv) cv.textContent=fmtM(costoHoy);
+  const cd=document.getElementById("costo-hoy-desc"); if(cd) cd.textContent=costoHoy>0?bultosHoy+" bulto"+(bultosHoy>1?"s":"")+" hoy":"Sin alimento registrado hoy";
+
+  window.setTipoVenta(tipoVenta);
+}
+
+const getPct=(h,a)=>(!a||!h)?0:Math.min(100,(h/a)*100);
+
+function renderVentas(){
+  const items=[
+    ...(DATA.ventas_gallina_viva||[]).map(v=>({...v,_t:"viva"})),
+    ...(DATA.ventas_gallina_muerta||[]).map(v=>({...v,_t:"muerta"})),
+    ...(DATA.ventas_huevo||[]).map(v=>({...v,_t:"huevo"})),
+  ].filter(m=>fechaEnRango(m.fecha,filtroVentas))
+   .sort((a,b)=>(b.ts?.seconds||0)-(a.ts?.seconds||0)).slice(0,60);
+
+  // totales hoy por vendedor
+  const todayStr=hoy();
+  const totales={};
+  [...(DATA.ventas_gallina_viva||[]),...(DATA.ventas_gallina_muerta||[]),...(DATA.ventas_huevo||[])]
+    .filter(v=>v.fecha===todayStr).forEach(v=>{
+      const u=v.usuario||"Sin nombre";
+      if(!totales[u]) totales[u]=0;
+      totales[u]+=(v.monto_total||0);
+    });
+  const telEl=document.getElementById("totales-vendedores");
+  if(telEl){
+    const entries=Object.entries(totales).sort((a,b)=>b[1]-a[1]);
+    telEl.innerHTML=entries.length?`<div style="background:rgba(0,200,81,.06);border:1px solid rgba(0,200,81,.15);border-radius:12px;padding:12px;margin-bottom:10px">
+      <div style="font-size:11px;color:var(--grn);font-weight:800;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">💵 A entregar hoy</div>
+      ${entries.map(([u,v])=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(0,200,81,.1)">
+        <span style="font-weight:700;font-size:14px">${u}</span>
+        <span style="font-weight:900;font-size:17px;color:var(--grn)">${fmtM(v)}</span>
+      </div>`).join("")}
+    </div>`:"";
+  }
+
+  const el=document.getElementById("lista-ventas");
+  if(!el) return;
+  if(!items.length){el.innerHTML='<div class="empty">Sin ventas en este periodo</div>';return;}
+  el.innerHTML=items.map(m=>{
+    const ico=m._t==="viva"?"🐓":m._t==="muerta"?"🍗":"🥚";
+    const label=m._t==="viva"?"Gallina viva":m._t==="muerta"?"Enfriador":"Huevos";
+    const col=m._t==="huevo"?"var(--acc2)":m._t==="viva"?"var(--grn)":"var(--cold)";
+    const qty=m._t==="huevo"?m.cantidad_huevos:m.cantidad;
+    const colName=m._t==="viva"?"ventas_gallina_viva":m._t==="muerta"?"ventas_gallina_muerta":"ventas_huevo";
+    return movHTML(ico,label,col,qty,m.monto_total,m.fecha,m.hora||"",m.usuario||"",m.nota||"",colName,m.id,m.cliente);
+  }).join("");
+}
+
+function renderCompras(){
+  const items=[
+    ...(DATA.compras_vivas||[]).map(v=>({...v,_t:"cv"})),
+    ...(DATA.compras_muertas||[]).map(v=>({...v,_t:"cm"})),
+    ...(DATA.mortalidad||[]).map(v=>({...v,_t:"mort"})),
+  ].sort((a,b)=>(b.ts?.seconds||0)-(a.ts?.seconds||0)).slice(0,40);
+  const el=document.getElementById("lista-compras");
+  if(!el) return;
+  if(!items.length){el.innerHTML='<div class="empty">Sin registros</div>';return;}
+  el.innerHTML=items.map(m=>{
+    const ico=m._t==="cv"?"🐔":m._t==="cm"?"❄️":"💀";
+    const label=m._t==="cv"?"Compra vivas":m._t==="cm"?"Compra enfriador":"Mortalidad";
+    const col=m._t==="cv"?"var(--grn)":m._t==="cm"?"var(--cold)":"var(--red)";
+    const colName=m._t==="cv"?"compras_vivas":m._t==="cm"?"compras_muertas":"mortalidad";
+    return movHTML(ico,label,col,m.cantidad,m.monto_total||null,m.fecha,m.hora||"","",m.nota||"",colName,m.id,"");
+  }).join("");
+}
+
+function renderPostura(){
+  const v=calcVivas();
+  const tbody=document.getElementById("tabla-postura");
+  if(!tbody) return;
+  if(!(DATA.postura||[]).length){tbody.innerHTML='<tr><td colspan="5" class="empty">Sin registros</td></tr>';return;}
+  tbody.innerHTML=(DATA.postura||[]).slice(0,30).map(p=>{
+    const pct=getPct(p.huevos,v);
+    const col=pct>=70?"var(--grn)":pct>=40?"var(--acc2)":"var(--red)";
+    return`<tr>
+      <td style="font-size:12px;font-weight:700">${fmtD(p.fecha)}<br><span style="font-size:10px;color:var(--muted)">${p.hora||""}</span></td>
+      <td style="font-weight:800;font-size:15px">${p.huevos}</td>
+      <td><span style="font-weight:900;color:${col};font-size:16px">${pct.toFixed(1)}%</span><br>
+        <span class="pbar"><span class="pfill" style="width:${Math.min(100,pct)}%;background:${col}"></span></span>
+      </td>
+      <td style="font-size:11px;color:var(--muted);font-weight:600">${p.usuario||""}</td>
+      <td><button style="background:rgba(255,68,68,.1);border:none;color:var(--red);cursor:pointer;font-size:11px;padding:3px 7px;border-radius:5px" onclick="delItem('postura','${p.id}')">✕</button></td>
+    </tr>`;
+  }).join("");
+}
+
+function renderAlimento(){
+  const el=document.getElementById("lista-alimento");
+  if(!el) return;
+  if(!(DATA.alimento||[]).length){el.innerHTML='<div class="empty">Sin registros</div>';return;}
+  el.innerHTML=(DATA.alimento||[]).slice(0,20).map(a=>`
+    <div class="mov">
+      <div class="mi">🌽</div>
+      <div>
+        <div class="mt" style="color:var(--acc2)">${a.bultos} bulto${a.bultos>1?"s":""}</div>
+        <div class="mm">${fmtD(a.fecha)}${a.hora?" · "+a.hora:""}</div>
+        ${a.nota?`<div class="mn">${a.nota}</div>`:""}
+      </div>
+      <div class="mr"><div class="mq" style="color:var(--acc2);font-size:15px">${fmtM(a.costo)}</div></div>
+      <button class="xbtn" onclick="delItem('alimento','${a.id}')">✕</button>
+    </div>`).join("");
+}
+
+function renderAdmin(){
+  if(!ES_ADMIN) return;
+  const v=calcVivas(),e=calcEnf();
+  document.getElementById("res-cv").textContent=sum(DATA.compras_vivas,x=>x.cantidad);
+  document.getElementById("res-mort").textContent=sum(DATA.mortalidad,x=>x.cantidad);
+  document.getElementById("res-vv").textContent=sum(DATA.ventas_gallina_viva,x=>x.cantidad);
+  document.getElementById("res-exist").textContent=v;
+  document.getElementById("res-cm").textContent=sum(DATA.compras_muertas,x=>x.cantidad);
+  document.getElementById("res-vm").textContent=sum(DATA.ventas_gallina_muerta,x=>x.cantidad);
+  document.getElementById("res-stock").textContent=e;
+
+  const filtrar=arr=>arr.filter(x=>fechaEnRango(x.fecha,filtroAdmin));
+  const ingGV=sum(filtrar(DATA.ventas_gallina_viva),x=>x.monto_total);
+  const ingGM=sum(filtrar(DATA.ventas_gallina_muerta),x=>x.monto_total);
+  const ingH=sum(filtrar(DATA.ventas_huevo),x=>x.monto_total);
+  const egrV=sum(filtrar(DATA.compras_vivas),x=>x.monto_total);
+  const egrM=sum(filtrar(DATA.compras_muertas),x=>x.monto_total);
+  const egrAl=sum(filtrar(DATA.alimento),x=>x.costo);
+  const bal=ingGV+ingGM+ingH-egrV-egrM-egrAl;
+
+  document.getElementById("res-ingGV").textContent=fmtM(ingGV);
+  document.getElementById("res-ingGM").textContent=fmtM(ingGM);
+  document.getElementById("res-ingH").textContent=fmtM(ingH);
+  document.getElementById("res-egrV").textContent=fmtM(egrV);
+  document.getElementById("res-egrM").textContent=fmtM(egrM);
+  document.getElementById("res-egrAl").textContent=fmtM(egrAl);
+  const bel=document.getElementById("res-balance");
+  if(bel){bel.textContent=fmtM(bal);bel.style.color=bal>=0?"var(--grn)":"var(--red)";}
+
+  const pu={};
+  [...(DATA.ventas_gallina_viva||[]),...(DATA.ventas_gallina_muerta||[]),...(DATA.ventas_huevo||[])]
+    .filter(x=>fechaEnRango(x.fecha,filtroAdmin)).forEach(x=>{
+      if(!pu[x.usuario])pu[x.usuario]=0;pu[x.usuario]+=(x.monto_total||0);
+    });
+  const puel=document.getElementById("res-personas");
+  if(puel){
+    const entries=Object.entries(pu).sort((a,b)=>b[1]-a[1]);
+    puel.innerHTML=entries.length?entries.map(([u,val])=>`<div class="rrow"><span class="rl">${u}</span><span class="rv y">${fmtM(val)}</span></div>`).join(""):'<div class="empty">Sin ventas</div>';
+  }
+
+  const totalH=sum(DATA.postura,x=>x.huevos);
+  const totalV=sum(DATA.ventas_huevo,x=>x.cantidad_huevos);
+  const dias=(DATA.postura||[]).length;
+  document.getElementById("res-prec").textContent=totalH;
+  document.getElementById("res-pvend").textContent=totalV;
+  document.getElementById("res-pprom").textContent=dias>0?(totalH/dias).toFixed(1)+" huevos":"0";
+
+  // GRAFICA ultimos 7 dias
+  const grafica=document.getElementById("grafica-ventas");
+  const graficaL=document.getElementById("grafica-labels");
+  if(grafica){
+    const dias7=[];
+    for(let i=6;i>=0;i--){
+      const d=new Date(); d.setDate(d.getDate()-i);
+      dias7.push(d.toISOString().split("T")[0]);
+    }
+    const ventasPorDia=dias7.map(fecha=>{
+      const vg=sum((DATA.ventas_gallina_viva||[]).filter(x=>x.fecha===fecha),x=>x.monto_total);
+      const vm=sum((DATA.ventas_gallina_muerta||[]).filter(x=>x.fecha===fecha),x=>x.monto_total);
+      const vh=sum((DATA.ventas_huevo||[]).filter(x=>x.fecha===fecha),x=>x.monto_total);
+      return vg+vm+vh;
+    });
+    const maxVal=Math.max(...ventasPorDia,1);
+    grafica.innerHTML=ventasPorDia.map((v,i)=>{
+      const h=Math.round((v/maxVal)*100);
+      const label=new Date(dias7[i]+"T12:00:00").toLocaleDateString("es-CO",{weekday:"short"});
+      return`<div style="flex:1;display:flex;flex-direction:column;align-items:center">
+        <div class="gbar" style="height:${h}px;width:100%;background:linear-gradient(180deg,var(--grn),rgba(0,200,81,.3));border-radius:6px 6px 0 0;position:relative">
+          ${v>0?`<div class="gbar-val" style="color:var(--grn);font-size:8px">$${Math.round(v/1000)}k</div>`:""}
+        </div>
+        <div class="gbar-label">${label}</div>
+      </div>`;
+    }).join("");
+  }
+}
+
+// CALCULO MONTO - listeners
+function setupCalcMonto(){
+  ["vg-cantidad","vg-precio"].forEach(id=>{
+    document.getElementById(id)?.addEventListener("input",()=>calcMonto("vg-cantidad","vg-precio","vg-monto","vg-monto-fmt"));
+  });
+  ["vh-cantidad","vh-precio"].forEach(id=>{
+    document.getElementById(id)?.addEventListener("input",()=>calcMonto("vh-cantidad","vh-precio","vh-monto","vh-monto-fmt"));
+  });
+  ["cv-cantidad","cv-precio"].forEach(id=>{
+    document.getElementById(id)?.addEventListener("input",()=>calcMonto("cv-cantidad","cv-precio","cv-monto","cv-monto-fmt"));
+  });
+  ["cm-cantidad","cm-precio"].forEach(id=>{
+    document.getElementById(id)?.addEventListener("input",()=>calcMonto("cm-cantidad","cm-precio","cm-monto","cm-monto-fmt"));
+  });
+}
+setupCalcMonto();
+
+function renderAll(){renderStats();renderVentas();renderCompras();renderPostura();renderAlimento();}
+</script>
+</body>
+</html>

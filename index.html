@@ -1,1 +1,1775 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0a0f0d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Granja Kaler">
+<meta name="application-name" content="Granja Kaler">
+<meta name="description" content="Control de gallinas descarte - Granja Kaler">
+<link rel="manifest" href="manifest.json">
+<title>Control Galpon</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0f0d;--s1:#111915;--s2:#162019;--border:#1e3028;--text:#e8f5ee;--muted:#6b8c78;--acc:#00c851;--acc2:#f0a500;--grn:#00c851;--red:#ff4444;--cold:#4fc3f7;--pur:#ce93d8;--wa:#25d366}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh}
 
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px}
+.login-logo{font-size:64px;margin-bottom:16px}
+.login-title{font-size:28px;font-weight:900;color:var(--text);margin-bottom:4px}
+.login-title span{color:var(--acc)}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:36px;font-weight:600}
+.login-btns{display:flex;flex-direction:column;gap:12px;width:100%;max-width:320px}
+.login-btn{border:2px solid var(--border);border-radius:16px;padding:18px;background:var(--s1);color:var(--text);font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:12px}
+.login-btn:active{transform:scale(.97)}
+.login-btn.jadis{border-color:var(--acc)}
+.login-btn.kener{border-color:var(--cold)}
+.login-btn.admin{border-color:var(--acc2)}
+.login-icon{font-size:28px}
+
+/* APP */
+.app{max-width:480px;margin:0 auto;padding:0 0 100px;display:none}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#0d2b1a,#0a1f12);padding:20px 16px 16px;border-bottom:2px solid var(--acc)}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.logo-row{display:flex;align-items:center;gap:10px}
+.logo-icon{font-size:30px}
+.logo-text h1{font-size:22px;font-weight:900;letter-spacing:-1px}
+.logo-text h1 span{color:var(--acc)}
+.logo-text .sub{font-size:11px;color:var(--muted);font-weight:600}
+.user-badge{background:rgba(0,200,81,.15);border:1px solid rgba(0,200,81,.3);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:800;color:var(--acc);cursor:pointer}
+.hdr-date{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:6px}
+
+/* SYNC */
+.sync-bar{background:rgba(0,200,81,.06);border:1px solid rgba(0,200,81,.15);margin:12px 14px 0;border-radius:10px;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;font-size:12px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--grn);display:inline-block;margin-right:7px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.sync-off .sync-dot{background:var(--red);animation:none}
+
+/* ALERTA STOCK */
+.alerta-stock{background:rgba(255,68,68,.08);border:1.5px solid rgba(255,68,68,.3);margin:10px 14px 0;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;color:var(--red);display:none}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px 14px 0}
+.stat{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px;position:relative;overflow:hidden}
+.stat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
+.stat:nth-child(1)::after{background:var(--grn)}
+.stat:nth-child(2)::after{background:var(--cold)}
+.stat:nth-child(3)::after{background:var(--acc2)}
+.stat:nth-child(4)::after{background:var(--pur)}
+.sl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:700}
+.sv{font-size:28px;font-weight:900;line-height:1}
+.sv.g{color:var(--grn)}.sv.y{color:var(--acc2)}.sv.r{color:var(--red)}.sv.b{color:var(--cold)}.sv.p{color:var(--pur);font-size:16px;margin-top:4px}
+.sv-sub{font-size:11px;color:var(--muted);margin-top:3px;font-weight:600}
+
+/* TABS */
+.tabs{display:flex;gap:0;margin:12px 14px 0;background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:4px;overflow-x:auto}
+.tab{flex:1;min-width:56px;padding:9px 4px;border:none;border-radius:9px;background:transparent;color:var(--muted);font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s}
+.tab.on{background:var(--acc);color:#000;box-shadow:0 2px 10px rgba(0,200,81,.3)}
+.tab.admin-tab{color:var(--acc2)}
+.tab.admin-tab.on{background:var(--acc2);color:#000}
+.page{display:none}.page.on{display:block}
+
+/* CARDS */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:16px;margin:12px 14px 0}
+.ct{font-size:12px;font-weight:800;color:var(--acc);margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:7px}
+.ct::before{content:'';width:3px;height:18px;background:var(--acc);border-radius:2px;display:block}
+.ct.y{color:var(--acc2)}.ct.y::before{background:var(--acc2)}
+
+/* FORMS */
+.fg{display:grid;gap:10px;grid-template-columns:1fr 1fr}
+.fc{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.field input,.field select{background:var(--bg);border:1.5px solid var(--border);border-radius:11px;padding:12px 14px;color:var(--text);font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;outline:none;transition:all .2s;width:100%}
+.field input:focus,.field select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(0,200,81,.1)}
+.field select option{background:#111915}
+
+/* BUTTONS */
+.btn{border:none;border-radius:13px;padding:14px 18px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s;width:100%;margin-top:10px;letter-spacing:.3px}
+.btn:active{transform:scale(.97)}
+.ba{background:linear-gradient(135deg,#f0a500,#e09000);color:#000;box-shadow:0 3px 12px rgba(240,165,0,.3)}
+.bc{background:linear-gradient(135deg,#4fc3f7,#0288d1);color:#000}
+.bg{background:linear-gradient(135deg,#00c851,#00a040);color:#000;box-shadow:0 3px 12px rgba(0,200,81,.3)}
+.br{background:linear-gradient(135deg,#ff4444,#cc0000);color:#fff}
+.bp{background:linear-gradient(135deg,#ce93d8,#9c27b0);color:#fff}
+
+/* TYPE SELECTOR */
+.tsel{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.tb{background:var(--bg);border:2px solid var(--border);border-radius:13px;padding:14px 8px;cursor:pointer;color:var(--muted);font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;text-align:center;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:6px}
+.tb.on{border-color:var(--acc);background:rgba(0,200,81,.08);color:var(--acc)}
+
+/* MONTO DISPLAY */
+.monto-display{font-size:30px;font-weight:900;text-align:center;padding:10px 0;min-height:52px;color:var(--grn)}
+
+/* MOVIMIENTOS */
+.mlist{display:flex;flex-direction:column;gap:7px}
+.mov{background:var(--s2);border:1px solid var(--border);border-radius:13px;padding:12px 14px;display:grid;grid-template-columns:32px 1fr auto;gap:8px;align-items:start;position:relative}
+.mi{font-size:20px;padding-top:2px}
+.mt{font-size:13px;font-weight:800}
+.mm{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}
+.mn{font-size:11px;color:var(--muted);margin-top:3px;font-style:italic}
+.mr{text-align:right}
+.mq{font-size:18px;font-weight:900;font-family:'JetBrains Mono',monospace}
+.ma{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px}
+.xbtn{position:absolute;top:8px;right:10px;background:rgba(255,68,68,.1);border:none;color:var(--red);cursor:pointer;font-size:12px;padding:3px 7px;border-radius:6px}
+
+/* TABLA */
+.ptable{width:100%;border-collapse:collapse;font-size:13px}
+.ptable th{text-align:left;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:6px 8px;border-bottom:1px solid var(--border);font-weight:800}
+.ptable td{padding:9px 8px;border-bottom:1px solid rgba(30,48,40,.5);font-weight:600}
+.ptable tr:last-child td{border-bottom:none}
+.pbar{background:var(--bg);border-radius:4px;height:6px;overflow:hidden;width:65px;display:inline-block;vertical-align:middle;margin-left:6px}
+.pfill{height:100%;border-radius:4px}
+
+/* RESUMEN */
+.rrow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(30,48,40,.4);font-size:14px}
+.rrow:last-child{border-bottom:none}
+.rl{color:var(--muted);font-weight:600}
+.rv{font-weight:800;font-family:'JetBrains Mono',monospace}
+.rv.g{color:var(--grn)}.rv.y{color:var(--acc2)}.rv.r{color:var(--red)}.rv.b{color:var(--cold)}
+.rg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 14px 0}
+.rg2 .card{margin:0}
+
+/* GRAFICA */
+.grafica-bar{display:flex;align-items:flex-end;gap:4px;height:120px;padding:0 4px}
+.gbar{flex:1;border-radius:6px 6px 0 0;min-width:20px;position:relative;transition:height .3s}
+.gbar-label{font-size:9px;color:var(--muted);text-align:center;margin-top:4px;font-weight:700}
+.gbar-val{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:800;white-space:nowrap}
+
+/* FILTRO FECHA */
+.filtro-row{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto}
+.fbtn{background:var(--s1);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .15s}
+.fbtn.on{background:var(--acc);color:#000;border-color:var(--acc)}
+
+/* MISC */
+.hint{background:rgba(240,165,0,.06);border:1.5px solid rgba(240,165,0,.2);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.ht{font-size:10px;color:var(--acc2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:800}
+.hg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.hi-l{font-size:10px;color:var(--muted);font-weight:700}
+.hi-v{font-size:16px;font-weight:900;color:var(--acc2);margin-top:3px}
+.info{font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:600;padding:9px 12px;background:rgba(0,200,81,.05);border-radius:9px;border-left:3px solid var(--acc)}
+.empty{text-align:center;color:var(--muted);padding:28px;font-size:13px;font-weight:600}
+.loading{text-align:center;color:var(--muted);padding:28px;font-size:13px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#00c851,#00a040);color:#000;padding:11px 22px;border-radius:12px;font-weight:800;font-size:13px;z-index:9999;box-shadow:0 4px 20px rgba(0,200,81,.4);white-space:nowrap;display:none}
+.menu-item{display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:10px;padding:11px 12px;color:var(--muted);font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;cursor:pointer;text-align:left;transition:all .15s;margin-bottom:2px}
+.menu-item:hover{background:rgba(0,200,81,.06);color:var(--text)}
+.menu-item.on{background:rgba(0,200,81,.12);color:var(--acc);border-left:3px solid var(--acc)}
+.menu-item.admin-menu.on{background:rgba(240,165,0,.12);color:var(--acc2);border-left:3px solid var(--acc2)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-logo">🐔</div>
+  <div class="login-title">GRANJA <span>KALER</span></div>
+  <div class="login-sub">Selecciona tu usuario</div>
+  <div class="login-btns">
+    <button id="btn-jadis" class="login-btn jadis">
+      <span class="login-icon">👩</span>
+      <span>Jadis</span>
+    </button>
+    <button id="btn-kener" class="login-btn kener">
+      <span class="login-icon">👨</span>
+      <span>Kener</span>
+    </button>
+    <button id="btn-dario" class="login-btn" style="border-color:#ff9800">
+      <span class="login-icon">🚚</span>
+      <span>Dario Vergara</span>
+    </button>
+    <button id="btn-elioth" class="login-btn" style="border-color:#ff9800">
+      <span class="login-icon">🚚</span>
+      <span>Elioth Hoyos</span>
+    </button>
+    <button id="btn-admin" class="login-btn admin">
+      <span class="login-icon">🔐</span>
+      <span>Administrador</span>
+    </button>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="logo-row">
+        <div class="logo-icon">🐔</div>
+        <div class="logo-text">
+          <h1>GRANJA <span>KALER</span></h1>
+          <div class="sub">Control de Gallinas Descarte</div>
+        </div>
+      </div>
+      <div class="user-badge" id="user-badge" onclick="cerrarSesion()">👤 —</div>
+      <button onclick="openSidebar()" style="background:rgba(0,200,81,.15);border:1px solid rgba(0,200,81,.3);border-radius:10px;padding:8px 12px;color:var(--acc);font-size:18px;cursor:pointer">☰</button>
+    </div>
+    <div class="hdr-date" id="fecha-hdr"></div>
+  </div>
+
+  <div class="sync-bar" id="sync-bar">
+    <div><span class="sync-dot" id="sync-dot"></span><span id="sync-txt">Conectando...</span></div>
+    <span style="font-size:10px;color:var(--muted)" id="sync-time"></span>
+  </div>
+
+  <div class="alerta-stock" id="alerta-stock">⚠️ Stock enfriador bajo</div>
+
+  <div class="stats">
+    <div class="stat"><div class="sl">Aves galpon</div><div class="sv g" id="stat-vivas">0</div></div>
+    <div class="stat"><div class="sl">Enfriador</div><div class="sv b" id="stat-enf">0</div></div>
+    <div class="stat" style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px;position:relative;overflow:hidden">
+      <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--red)"></div>
+      <div class="sl">Merma total</div>
+      <div class="sv r" id="stat-merma">0</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;font-weight:700"><span id="stat-merma-pct">0%</span> de lo comprado</div>
+    </div>
+    <div class="stat" style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px;position:relative;overflow:hidden">
+      <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--acc2)"></div>
+      <div class="sl">Costo por ave</div>
+      <div class="sv y" id="stat-costo-ave" style="font-size:18px;margin-top:4px">-</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;font-weight:700">Última: <span id="stat-costo-ultima" style="color:var(--acc2)">-</span></div>
+    </div>
+    <div class="stat" style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:10px;background:transparent;border:none;padding:0">
+      <div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px;position:relative;overflow:hidden">
+        <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--acc2)"></div>
+        <div class="sl">Huevos disp.</div>
+        <div class="sv y" id="stat-huevos">0</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-weight:700"><span id="stat-canastas">0</span> canastas · <span id="stat-huevos-unid">0</span> unid.</div>
+      </div>
+      <div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px;position:relative;overflow:hidden">
+        <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--pur)"></div>
+        <div class="sl">% Postura hoy</div>
+        <div class="sv p" id="stat-pct">-</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-weight:700" id="stat-pct-desc">Sin registro</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div id="sidebar" style="position:fixed;left:-280px;top:0;bottom:0;width:280px;background:var(--s1);border-right:1px solid var(--border);z-index:500;transition:left .3s;overflow-y:auto;padding-bottom:40px">
+    <div style="padding:20px 16px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+      <div style="font-size:28px">🐔</div>
+      <div>
+        <div style="font-size:16px;font-weight:900">GRANJA <span style="color:var(--acc)">KALER</span></div>
+        <div style="font-size:11px;color:var(--muted);font-weight:600" id="sidebar-user">—</div>
+      </div>
+    </div>
+    <div style="padding:12px 8px">
+      <div style="font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:8px 10px 4px">Principal</div>
+      <button class="menu-item on" onclick="navTo('ventas')">💰 <span>Ventas</span></button>
+      <button class="menu-item" onclick="navTo('compras')">🛒 <span>Compras</span></button>
+      <button class="menu-item" onclick="navTo('traslado')">🔄 <span>Traslado → Enfriador</span></button>
+      <button class="menu-item" onclick="navTo('sacrificio')">🔪 <span>Sacrificio del día</span></button>
+      <button class="menu-item" onclick="navTo('postura')">🥚 <span>Postura</span></button>
+      <button class="menu-item" onclick="navTo('alimento')">🌽 <span>Alimento</span></button>
+      <button class="menu-item" onclick="navTo('merma')">💀 <span>Merma / Bajas</span></button>
+      <div style="font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:16px 10px 4px">Clientes</div>
+      <button class="menu-item" onclick="navTo('creditos')">💳 <span>Créditos</span></button>
+      <button class="menu-item" onclick="navTo('clientes')">👥 <span>Clientes</span></button>
+      <button class="menu-item" onclick="navTo('entregas')">🤝 <span>Entregas</span></button>
+      <button class="menu-item" onclick="navTo('conductor')" id="menu-conductor-btn" style="display:none">🚚 <span>Mis viajes</span></button>
+      <div style="font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:16px 10px 4px" id="menu-admin-section" style="display:none">Administración</div>
+      <button class="menu-item admin-menu" onclick="navTo('admin')" id="menu-admin-btn" style="display:none">📊 <span>Reportes</span></button>
+      <button class="menu-item admin-menu" onclick="navTo('caja')" id="menu-caja-btn" style="display:none">💵 <span>Caja diaria</span></button>
+      <button class="menu-item admin-menu" onclick="navTo('gastos')" id="menu-gastos-btn" style="display:none">📋 <span>Gastos generales</span></button>
+      <button class="menu-item admin-menu" onclick="navTo('utilidad')" id="menu-utilidad-btn" style="display:none">💰 <span>Utilidad por venta</span></button>
+      <button class="menu-item admin-menu" onclick="navTo('liquidacion')" id="menu-liq-btn" style="display:none">🤝 <span>Liquidar conductor</span></button>
+      <div style="margin-top:20px;padding:0 10px">
+        <button onclick="cerrarSesion()" style="width:100%;background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.2);color:var(--red);border-radius:10px;padding:10px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;cursor:pointer">🚪 Cerrar sesión</button>
+      </div>
+    </div>
+  </div>
+  <div id="sidebar-overlay" onclick="closeSidebar()" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:499;display:none"></div>
+
+  <!-- VENTAS -->
+  <div id="page-ventas" class="page on">
+
+    <!-- SELECTOR tipo de venta -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px 14px 0">
+      <button onclick="mostrarSeccionVenta('gallinas')" id="btn-sec-gallinas" style="background:linear-gradient(135deg,#0d2b1a,#111915);border:2px solid var(--grn);border-radius:18px;padding:20px 12px;cursor:pointer;transition:all .2s">
+        <div style="font-size:44px">🐓</div>
+        <div style="font-size:14px;font-weight:900;color:var(--grn);margin-top:6px">GALLINAS</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px" id="info-stock-gallinas">Cargando...</div>
+      </button>
+      <button onclick="mostrarSeccionVenta('huevos')" id="btn-sec-huevos" style="background:linear-gradient(135deg,#2b200a,#1a1608);border:2px solid var(--acc2);border-radius:18px;padding:20px 12px;cursor:pointer;transition:all .2s">
+        <div style="font-size:44px">🥚</div>
+        <div style="font-size:14px;font-weight:900;color:var(--acc2);margin-top:6px">HUEVOS</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px" id="info-stock-huevos2">Cargando...</div>
+      </button>
+    </div>
+
+    <!-- GALLINAS - fondo verde oscuro -->
+    <div id="seccion-gallinas" style="display:none">
+    <div class="card" style="background:linear-gradient(135deg,#0d2b1a,#111915);border-color:var(--grn);border-width:2px;margin-top:14px">
+      <div style="text-align:center;margin-bottom:14px">
+        <div style="font-size:56px">🐓</div>
+        <div style="font-size:18px;font-weight:900;color:var(--grn);letter-spacing:1px">VENTA DE GALLINAS</div>
+      </div>
+      <div class="tsel">
+        <button class="tb" id="tb-viva" onclick="setTipoVenta('viva')">
+          <span style="font-size:34px">🐓</span><span style="font-weight:800">Viva</span>
+        </button>
+        <button class="tb" id="tb-muerta" onclick="setTipoVenta('muerta')">
+          <span style="font-size:34px">🍗</span><span style="font-weight:800">Enfriador</span>
+        </button>
+      </div>
+      <div class="info" id="info-venta-gallina">Disponible: 0 aves</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="vg-fecha"></div>
+        <div class="field"><label>Vendedor</label><input type="text" id="vg-usuario" list="lista-vendedores"></div>
+        <div class="field fc"><label>Cliente</label><input type="text" id="vg-cliente" placeholder="Nombre del cliente" oninput="this.value=this.value.toUpperCase()" list="lista-clientes-credito"></div>
+        <div class="field fc"><label>Teléfono cliente</label><input type="tel" id="vg-cliente-tel" placeholder="3001234567 (opcional)"></div>
+        <div class="field"><label>Cantidad</label><input type="number" min="1" id="vg-cantidad" placeholder="0"></div>
+        <div class="field"><label>Precio unitario</label><input type="number" id="vg-precio" placeholder="$0"></div>
+        <div class="field fc"><label>Monto total</label><input id="vg-monto" style="display:none"><div class="monto-display" id="vg-monto-fmt"></div></div>
+        <div class="field fc"><label>Nota</label><input type="text" id="vg-nota" placeholder="Observaciones..."></div>
+        <div class="field"><label>🚚 Gasto transporte</label><input type="number" id="vg-transporte" placeholder="$0"></div>
+        <div class="field"><label>👨‍✈️ Pago conductor</label><input type="number" id="vg-conductor" placeholder="$0"></div>
+        <div class="field fc"><label>➕ Otros gastos venta</label><input type="number" id="vg-otros" placeholder="$0"></div>
+        <div class="field fc" id="vg-utilidad-box" style="background:rgba(0,200,81,.06);border:1px solid rgba(0,200,81,.2);border-radius:12px;padding:12px;display:none">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:8px">📊 Resumen esta venta</div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:var(--muted)">Costo por ave</span><span style="font-size:12px;font-weight:700;color:var(--cold)" id="vg-info-costo-ave">$0</span></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:var(--muted)">Costo aves (x cant.)</span><span style="font-size:12px;font-weight:700;color:var(--cold)" id="vg-info-costo-total">$0</span></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:var(--muted)">Gastos venta</span><span style="font-size:12px;font-weight:700;color:var(--red)" id="vg-info-gastos">$0</span></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:var(--muted)">Precio venta</span><span style="font-size:12px;font-weight:700;color:var(--grn)" id="vg-info-venta">$0</span></div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span style="font-size:14px;font-weight:800">Utilidad neta</span><span style="font-size:18px;font-weight:900" id="vg-info-utilidad">$0</span></div>
+        </div>
+      </div>
+      <div class="tsel" style="margin-top:10px">
+        <button class="tb on" id="vg-tipo-contado" onclick="setTipoPago('vg','contado')" style="border-color:var(--grn);background:rgba(0,200,81,.1);color:var(--grn)">
+          <span style="font-size:24px">💵</span><span>Contado</span>
+        </button>
+        <button class="tb" id="vg-tipo-credito" onclick="setTipoPago('vg','credito')">
+          <span style="font-size:24px">💳</span><span>A crédito</span>
+        </button>
+      </div>
+      <button class="btn bg" onclick="addVentaGallina()" style="font-size:16px;padding:16px">🐓 Registrar venta gallina</button>
+    </div>
+
+    </div><!-- end seccion-gallinas -->
+
+    <!-- HUEVOS - fondo amarillo oscuro -->
+    <div id="seccion-huevos" style="display:none">
+    <div class="card" style="background:linear-gradient(135deg,#2b200a,#1a1608);border-color:var(--acc2);border-width:2px">
+      <div style="text-align:center;margin-bottom:14px">
+        <div style="font-size:56px">🥚</div>
+        <div style="font-size:18px;font-weight:900;color:var(--acc2);letter-spacing:1px">VENTA DE HUEVOS</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        <div style="background:rgba(240,165,0,.1);border:1.5px solid rgba(240,165,0,.3);border-radius:12px;padding:12px;text-align:center">
+          <div class="sl">Disponibles</div>
+          <div style="font-size:28px;font-weight:900;color:var(--acc2)" id="stock-huevos-u">0</div>
+          <div style="font-size:11px;color:var(--muted);font-weight:600">unidades</div>
+        </div>
+        <div style="background:rgba(240,165,0,.1);border:1.5px solid rgba(240,165,0,.3);border-radius:12px;padding:12px;text-align:center">
+          <div class="sl">Canastas x30</div>
+          <div style="font-size:28px;font-weight:900;color:var(--acc2)" id="stock-huevos-c">0</div>
+          <div style="font-size:11px;color:var(--muted);font-weight:600">canastas</div>
+        </div>
+      </div>
+      <div class="tsel">
+        <button class="tb" id="tb-canasta" onclick="setTipoHuevo('canasta')">🧺 Canasta (30)</button>
+        <button class="tb" id="tb-suelto" onclick="setTipoHuevo('suelto')">🥚 Suelto</button>
+      </div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="vh-fecha"></div>
+        <div class="field"><label>Vendedor</label><input type="text" id="vh-usuario" list="lista-vendedores"></div>
+        <div class="field fc"><label>Cliente</label><input type="text" id="vh-cliente" placeholder="Nombre del cliente" oninput="this.value=this.value.toUpperCase()" list="lista-clientes-credito"></div>
+        <div class="field fc"><label>Teléfono cliente</label><input type="tel" id="vh-cliente-tel" placeholder="3001234567 (opcional)"></div>
+        <div class="field fc"><label>Nota / Observación</label><input type="text" id="vh-nota" placeholder="Observaciones..."></div>
+        <div class="field"><label id="lbl-cant-huevo">Canastas</label><input type="number" min="1" id="vh-cantidad" placeholder="0"></div>
+        <div class="field"><label id="lbl-precio-huevo">Precio canasta</label><input type="number" id="vh-precio" placeholder="$0"></div>
+        <div class="field fc"><label>Monto total</label><input id="vh-monto" style="display:none"><div class="monto-display" id="vh-monto-fmt" style="color:var(--acc2)"></div></div>
+      </div>
+      <div class="tsel" style="margin-top:10px">
+        <button class="tb on" id="vh-tipo-contado" onclick="setTipoPago('vh','contado')" style="border-color:var(--acc2);background:rgba(240,165,0,.1);color:var(--acc2)">
+          <span style="font-size:24px">💵</span><span>Contado</span>
+        </button>
+        <button class="tb" id="vh-tipo-credito" onclick="setTipoPago('vh','credito')">
+          <span style="font-size:24px">💳</span><span>A crédito</span>
+        </button>
+      </div>
+      <button class="btn ba" onclick="addVentaHuevo()" style="font-size:16px;padding:16px">🥚 Registrar venta huevo</button>
+    </div>
+
+    </div><!-- end seccion-huevos -->
+
+    <!-- HISTORIAL SEPARADO -->
+    <div class="card">
+      <div class="ct">Historial de ventas</div>
+      <div class="filtro-row" id="filtro-ventas">
+        <button class="fbtn on" onclick="setFiltroVentas('hoy',this)">Hoy</button>
+        <button class="fbtn" onclick="setFiltroVentas('semana',this)">Semana</button>
+        <button class="fbtn" onclick="setFiltroVentas('mes',this)">Mes</button>
+        <button class="fbtn" onclick="setFiltroVentas('todo',this)">Todo</button>
+      </div>
+      <!-- Totales a entregar hoy -->
+      <div id="totales-vendedores" style="margin-bottom:10px"></div>
+      <!-- Gallinas -->
+      <div style="font-size:11px;font-weight:800;color:var(--grn);text-transform:uppercase;letter-spacing:1px;margin:10px 0 6px;display:flex;align-items:center;gap:6px">
+        <span>🐓</span> Gallinas — <span id="total-ventas-gallina" style="font-family:'JetBrains Mono',monospace">$0</span>
+      </div>
+      <div class="mlist" id="lista-ventas-gallina"></div>
+      <!-- Huevos -->
+      <div style="font-size:11px;font-weight:800;color:var(--acc2);text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px;display:flex;align-items:center;gap:6px">
+        <span>🥚</span> Huevos — <span id="total-ventas-huevo" style="font-family:'JetBrains Mono',monospace">$0</span>
+      </div>
+      <div class="mlist" id="lista-ventas-huevo"></div>
+    </div>
+  </div>
+
+  <!-- COMPRAS -->
+  <div id="page-compras" class="page">
+    <div class="card">
+      <div class="ct">Compra gallinas vivas</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="cv-fecha"></div>
+        <div class="field"><label>Cantidad</label><input type="number" min="1" id="cv-cantidad" placeholder="0"></div>
+        <div class="field"><label>Precio unitario</label><input type="number" id="cv-precio" placeholder="$0"></div>
+        <div class="field"><label>Subtotal aves</label><input id="cv-monto" style="display:none"><div class="monto-display" id="cv-monto-fmt" style="font-size:18px"></div></div>
+        <div class="field"><label>🚚 Flete transporte</label><input type="number" id="cv-flete" placeholder="$0"></div>
+        <div class="field"><label>👷 Descargue</label><input type="number" id="cv-descargue" placeholder="$0"></div>
+        <div class="field"><label>🧾 Viáticos conductor</label><input type="number" id="cv-viaticos" placeholder="$0"></div>
+        <div class="field"><label>➕ Otros gastos</label><input type="number" id="cv-otros" placeholder="$0"></div>
+        <div class="field fc" style="background:rgba(0,200,81,.06);border:1px solid rgba(0,200,81,.2);border-radius:12px;padding:12px">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px">Costo real total</div>
+          <div style="font-size:28px;font-weight:900;color:var(--grn)" id="cv-costo-total">$0</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Costo por ave: <span style="color:var(--grn);font-weight:800" id="cv-costo-ave">$0</span></div>
+        </div>
+        <div class="field fc"><label>Nota / Proveedor</label><input type="text" id="cv-nota" placeholder="Proveedor..."></div>
+      </div>
+      <button class="btn bg" onclick="addCompraViva()">Registrar compra vivas</button>
+    </div>
+    <div class="card">
+      <div class="ct">Compra gallinas muertas (enfriador)</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="cm-fecha"></div>
+        <div class="field"><label>Cantidad</label><input type="number" min="1" id="cm-cantidad" placeholder="0"></div>
+        <div class="field"><label>Precio unitario</label><input type="number" id="cm-precio" placeholder="$0"></div>
+        <div class="field"><label>Subtotal aves</label><input id="cm-monto" style="display:none"><div class="monto-display" id="cm-monto-fmt" style="font-size:18px;color:var(--cold)"></div></div>
+        <div class="field"><label>🚚 Flete transporte</label><input type="number" id="cm-flete" placeholder="$0"></div>
+        <div class="field"><label>👷 Descargue</label><input type="number" id="cm-descargue" placeholder="$0"></div>
+        <div class="field"><label>🧾 Viáticos conductor</label><input type="number" id="cm-viaticos" placeholder="$0"></div>
+        <div class="field"><label>➕ Otros gastos</label><input type="number" id="cm-otros" placeholder="$0"></div>
+        <div class="field fc" style="background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.2);border-radius:12px;padding:12px">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px">Costo real total</div>
+          <div style="font-size:28px;font-weight:900;color:var(--cold)" id="cm-costo-total">$0</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Costo por ave: <span style="color:var(--cold);font-weight:800" id="cm-costo-ave">$0</span></div>
+        </div>
+        <div class="field fc"><label>Nota / Proveedor</label><input type="text" id="cm-nota" placeholder="Proveedor..."></div>
+      </div>
+      <button class="btn bc" onclick="addCompraMuerta()">Registrar compra muertas</button>
+    </div>
+    <div class="card">
+      <div class="ct">Mortalidad (aves muertas sin sacrificio)</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="mort-fecha"></div>
+        <div class="field"><label>Cantidad</label><input type="number" min="1" id="mort-cantidad" placeholder="0"></div>
+        <div class="field fc"><label>Causa</label><input type="text" id="mort-nota" placeholder="Enfermedad, accidente..."></div>
+      </div>
+      <button class="btn br" onclick="addMortalidad()">Registrar mortalidad</button>
+    </div>
+    <div class="card">
+      <div class="ct">Historial compras y mortalidad</div>
+      <div class="mlist" id="lista-compras"><div class="loading">Cargando...</div></div>
+    </div>
+  </div>
+
+  <!-- POSTURA -->
+  <div id="page-postura" class="page">
+    <div class="card">
+      <div class="ct">Registro diario postura</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="pos-fecha"></div>
+        <div class="field"><label>Huevos recolectados</label><input type="number" min="0" id="pos-huevos" placeholder="0"></div>
+        <div class="field fc"><label>Registrado por</label><input type="text" id="pos-usuario" list="lista-vendedores"></div>
+      </div>
+      <button class="btn ba" onclick="addPostura()">Registrar postura</button>
+    </div>
+    <div class="card">
+      <div class="ct">Tabla de postura</div>
+      <div style="overflow-x:auto"><table class="ptable">
+        <thead><tr><th>Fecha / Hora</th><th>Huevos</th><th>% Postura</th><th>Por</th><th></th></tr></thead>
+        <tbody id="tabla-postura"><tr><td colspan="5" class="loading">Cargando...</td></tr></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ALIMENTO -->
+  <div id="page-alimento" class="page">
+    <div class="card" style="background:linear-gradient(135deg,rgba(0,200,81,.08),rgba(0,160,64,.04));border-color:rgba(0,200,81,.2)">
+      <div class="ct">Costo del dia de hoy</div>
+      <div style="text-align:center;padding:8px 0">
+        <div style="font-size:44px;font-weight:900;color:var(--grn)" id="costo-hoy-val">$0</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;font-weight:600" id="costo-hoy-desc">Sin alimento registrado hoy</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ct">Registrar alimento de hoy</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="al-fecha"></div>
+        <div class="field"><label>Bultos echados</label><input type="number" min="0" step="0.5" id="al-bultos" placeholder="0" oninput="actualizarCostoAlim()"></div>
+        <div class="field fc"><label id="lbl-costo-alim">Costo: $0</label><input type="text" id="al-nota" placeholder="Observaciones..."></div>
+      </div>
+      <button class="btn ba" onclick="addAlimento()">Registrar alimento</button>
+    </div>
+    <div class="card">
+      <div class="ct">Historial alimento</div>
+      <div class="mlist" id="lista-alimento"><div class="loading">Cargando...</div></div>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div id="page-admin" class="page">
+    <div class="rg2">
+      <div class="card" style="margin:0">
+        <div class="ct y">Galpon</div>
+        <div class="rrow"><span class="rl">Compradas</span><span class="rv g" id="res-cv">0</span></div>
+        <div class="rrow"><span class="rl">Mortalidad</span><span class="rv r" id="res-mort">0</span></div>
+        <div class="rrow"><span class="rl">Vendidas</span><span class="rv y" id="res-vv">0</span></div>
+        <div class="rrow"><span class="rl">Existencia</span><span class="rv g" id="res-exist">0</span></div>
+      </div>
+      <div class="card" style="margin:0">
+        <div class="ct y">Enfriador</div>
+        <div class="rrow"><span class="rl">Compradas</span><span class="rv b" id="res-cm">0</span></div>
+        <div class="rrow"><span class="rl">Vendidas</span><span class="rv y" id="res-vm">0</span></div>
+        <div class="rrow"><span class="rl">Stock</span><span class="rv b" id="res-stock">0</span></div>
+      </div>
+    </div>
+
+    <!-- GRAFICAS -->
+    <div class="card">
+      <div class="ct y">Ventas ultimos 7 dias</div>
+      <div class="grafica-bar" id="grafica-ventas"></div>
+      <div style="display:flex;gap:0" id="grafica-labels"></div>
+    </div>
+
+    <div class="card">
+      <div class="ct y">Financiero</div>
+      <div class="filtro-row">
+        <button class="fbtn on" onclick="setFiltroAdmin('hoy',this)">Hoy</button>
+        <button class="fbtn" onclick="setFiltroAdmin('semana',this)">Semana</button>
+        <button class="fbtn" onclick="setFiltroAdmin('mes',this)">Mes</button>
+        <button class="fbtn" onclick="setFiltroAdmin('todo',this)">Todo</button>
+      </div>
+      <div class="rrow"><span class="rl">Venta gallina viva</span><span class="rv g" id="res-ingGV">-</span></div>
+      <div class="rrow"><span class="rl">Venta enfriador</span><span class="rv g" id="res-ingGM">-</span></div>
+      <div class="rrow"><span class="rl">Venta huevos</span><span class="rv g" id="res-ingH">-</span></div>
+      <div class="rrow"><span class="rl">Egreso aves vivas</span><span class="rv r" id="res-egrV">-</span></div>
+      <div class="rrow"><span class="rl">Egreso enfriador</span><span class="rv r" id="res-egrM">-</span></div>
+      <div class="rrow"><span class="rl">Egreso alimento</span><span class="rv r" id="res-egrAl">-</span></div>
+      <div class="rrow" style="margin-top:6px">
+        <span class="rl" style="font-weight:800;color:var(--text);font-size:15px">Balance neto</span>
+        <span class="rv" id="res-balance" style="font-size:20px">-</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct y">Ventas por persona</div>
+      <div id="res-personas"></div>
+    </div>
+
+    <div class="card">
+      <div class="ct y">Postura</div>
+      <div class="rrow"><span class="rl">Total recolectados</span><span class="rv y" id="res-prec">0</span></div>
+      <div class="rrow"><span class="rl">Total vendidos</span><span class="rv g" id="res-pvend">0</span></div>
+      <div class="rrow"><span class="rl">Promedio diario</span><span class="rv y" id="res-pprom">0</span></div>
+    </div>
+
+    <div class="card">
+      <div class="ct y">💰 Utilidad real por producto</div>
+      <div class="rrow"><span class="rl">Utilidad gallina viva</span><span class="rv g" id="res-util-gv">-</span></div>
+      <div class="rrow"><span class="rl">Utilidad enfriador</span><span class="rv g" id="res-util-gm">-</span></div>
+      <div class="rrow"><span class="rl">Gastos en ventas</span><span class="rv r" id="res-gastos-ventas">-</span></div>
+      <div class="rrow"><span class="rl">Costo promedio ave (viva)</span><span class="rv b" id="res-costo-ave-v">-</span></div>
+      <div class="rrow"><span class="rl">Costo promedio ave (enfriador)</span><span class="rv b" id="res-costo-ave-m">-</span></div>
+      <div class="rrow" style="margin-top:6px">
+        <span class="rl" style="font-weight:900;color:var(--text)">Utilidad neta total</span>
+        <span class="rv" id="res-util-neta" style="font-size:20px">-</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct y">🔐 Cambiar clave admin</div>
+      <div class="fg">
+        <div class="field fc"><label>Clave actual</label><input type="password" id="clave-actual" placeholder="••••••"></div>
+        <div class="field fc"><label>Nueva clave</label><input type="password" id="clave-nueva" placeholder="••••••"></div>
+        <div class="field fc"><label>Confirmar nueva clave</label><input type="password" id="clave-confirm" placeholder="••••••"></div>
+      </div>
+      <button class="btn ba" onclick="cambiarClave()" style="margin-top:10px">🔐 Cambiar clave</button>
+    </div>
+
+    <div class="card">
+      <div class="ct y">🚚 Historial rutas y conductores</div>
+      <div class="filtro-row" id="filtro-rutas">
+        <button class="fbtn on" onclick="setFiltroRutas('semana',this)">Semana</button>
+        <button class="fbtn" onclick="setFiltroRutas('mes',this)">Mes</button>
+        <button class="fbtn" onclick="setFiltroRutas('todo',this)">Todo</button>
+      </div>
+      <div id="lista-rutas"><div class="loading">Cargando...</div></div>
+    </div>
+
+    <div class="card">
+      <div class="ct y">🗑️ Historial de eliminaciones</div>
+      <div id="lista-auditoria"><div class="loading">Cargando...</div></div>
+    </div>
+
+    <div class="card">
+      <div class="ct y">Exportar datos</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px;font-weight:600">Copia de seguridad completa en Excel.</div>
+      <button class="btn ba" onclick="exportarExcel()" style="margin-top:0">📥 Descargar Excel</button>
+    </div>
+  </div>
+
+  <!-- SACRIFICIO -->
+  <div id="page-sacrificio" class="page">
+
+    <!-- Cilindro de gas -->
+    <div class="card" style="border-color:var(--acc2);border-width:2px">
+      <div class="ct y">🔥 Control cilindro de gas</div>
+      <div id="gas-status" style="text-align:center;padding:10px 0;margin-bottom:12px">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px">Gallinas disponibles en cilindro</div>
+        <div style="font-size:40px;font-weight:900;color:var(--acc2)" id="gas-disponible">-</div>
+        <div style="font-size:12px;color:var(--muted)" id="gas-desc">Sin cilindro registrado</div>
+      </div>
+      <div class="fg">
+        <div class="field"><label>Tipo cilindro</label>
+          <select id="gas-tipo">
+            <option value="40">40 kg (1.000 gallinas)</option>
+            <option value="100">100 kg (2.500 gallinas)</option>
+          </select>
+        </div>
+        <div class="field"><label>Precio cilindro</label><input type="number" id="gas-precio" placeholder="$0"></div>
+        <div class="field fc"><label>Fecha compra</label><input type="date" id="gas-fecha"></div>
+      </div>
+      <button class="btn ba" onclick="addCilindro()" style="margin-top:10px">🔥 Registrar cilindro nuevo</button>
+      <div id="lista-cilindros" style="margin-top:14px"></div>
+    </div>
+
+    <!-- Registrar sacrificio -->
+    <div class="card" style="border-color:var(--pur);border-width:2px">
+      <div class="ct" style="color:var(--pur)">🔪 Registrar sacrificio del día</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="sac-fecha"></div>
+        <div class="field"><label>Cantidad gallinas</label><input type="number" min="1" id="sac-cantidad" placeholder="0" oninput="calcSacrificio()"></div>
+        <div class="field fc"><label>💀 Merma en sacrificio</label><input type="number" min="0" id="sac-merma" placeholder="0" oninput="calcSacrificio()"></div>
+        <div class="field fc"><label>☕ Gastos fijos (merienda, agua, café)</label><input type="number" id="sac-gastos-fijos" placeholder="35000" value="35000" oninput="calcSacrificio()"></div>
+      </div>
+
+      <!-- Personal -->
+      <div style="margin:14px 0 8px;font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase">👥 Personal que vino hoy</div>
+      <div id="lista-personal-sac" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px"></div>
+
+      <!-- Resumen costo -->
+      <div id="sac-resumen" style="background:rgba(206,147,216,.06);border:1px solid rgba(206,147,216,.2);border-radius:12px;padding:14px;display:none">
+        <div style="font-size:11px;color:var(--pur);font-weight:800;text-transform:uppercase;margin-bottom:10px">📊 Costo del sacrificio</div>
+        <div class="rrow"><span class="rl">Mano de obra total</span><span class="rv" id="sac-total-mo" style="color:var(--pur)">$0</span></div>
+        <div class="rrow"><span class="rl">Gas (costo proporcional)</span><span class="rv" id="sac-total-gas" style="color:var(--acc2)">$0</span></div>
+        <div class="rrow"><span class="rl">Gastos fijos</span><span class="rv" id="sac-total-fijos" style="color:var(--muted)">$0</span></div>
+        <div class="rrow" style="border-top:2px solid var(--border);margin-top:6px;padding-top:10px">
+          <span style="font-weight:900;font-size:15px">Costo por gallina</span>
+          <span style="font-size:24px;font-weight:900;color:var(--pur)" id="sac-costo-ave">$0</span>
+        </div>
+        <div class="rrow"><span class="rl">Total a pagar</span><span class="rv g" id="sac-total-pagar">$0</span></div>
+      </div>
+
+      <!-- Detalle pago por persona -->
+      <div id="sac-detalle-personal" style="margin-top:12px"></div>
+
+      <!-- Destino de las gallinas -->
+      <div style="margin:14px 0 8px;font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase">❓ ¿Qué pasa con las gallinas sacrificadas?</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+        <button class="destino-btn on" id="dest-venden" onclick="setDestino('venden')" style="background:rgba(0,200,81,.1);border:2px solid var(--grn);border-radius:12px;padding:12px;text-align:left;cursor:pointer;font-family:'Outfit',sans-serif">
+          <div style="font-weight:800;color:var(--grn)">✅ Se vendieron todas hoy</div>
+          <div style="font-size:12px;color:var(--muted)">Nada va al enfriador</div>
+        </button>
+        <button class="destino-btn" id="dest-mixto" onclick="setDestino('mixto')" style="background:var(--bg);border:2px solid var(--border);border-radius:12px;padding:12px;text-align:left;cursor:pointer;font-family:'Outfit',sans-serif">
+          <div style="font-weight:800;color:var(--muted)">🔄 Unas se vendieron, resto al enfriador</div>
+          <div style="font-size:12px;color:var(--muted)">Ingresas cuántas van al enfriador</div>
+        </button>
+        <button class="destino-btn" id="dest-enfriador" onclick="setDestino('enfriador')" style="background:var(--bg);border:2px solid var(--border);border-radius:12px;padding:12px;text-align:left;cursor:pointer;font-family:'Outfit',sans-serif">
+          <div style="font-weight:800;color:var(--muted)">❄️ Todas van al enfriador</div>
+          <div style="font-size:12px;color:var(--muted)">Vendes después</div>
+        </button>
+      </div>
+      <div id="sac-enf-wrap" style="display:none">
+        <div class="field"><label>Cantidad al enfriador</label><input type="number" min="0" id="sac-al-enf" placeholder="0"></div>
+      </div>
+
+      <button class="btn bp" onclick="addSacrificio()" style="margin-top:14px">🔪 Registrar sacrificio</button>
+    </div>
+
+    <!-- Historial -->
+    <div class="card">
+      <div class="ct" style="color:var(--pur)">Historial sacrificios</div>
+      <div class="mlist" id="lista-sacrificios"><div class="loading">Cargando...</div></div>
+    </div>
+  </div>
+
+  <!-- TRASLADO GALPON → ENFRIADOR -->
+  <div id="page-traslado" class="page">
+    <div class="card" style="border-color:var(--cold);border-width:2px">
+      <div class="ct" style="color:var(--cold)">🔄 Traslado galpon → Enfriador</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:14px;font-weight:600">Gallinas sacrificadas que pasan al enfriador para vender después.</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="tras-fecha"></div>
+        <div class="field"><label>Cantidad a trasladar</label><input type="number" min="1" id="tras-cantidad" placeholder="0"></div>
+        <div class="field"><label>💀 Merma en sacrificio</label><input type="number" min="0" id="tras-merma" placeholder="0"></div>
+        <div class="field fc"><label>Nota</label><input type="text" id="tras-nota" placeholder="Observaciones..."></div>
+      </div>
+      <div style="background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.2);border-radius:12px;padding:12px;margin:10px 0">
+        <div style="font-size:12px;color:var(--muted)">Galpon: <span style="color:var(--grn);font-weight:800" id="tras-info-galpon">0</span> · Enfriador: <span style="color:var(--cold);font-weight:800" id="tras-info-enf">0</span></div>
+      </div>
+      <button class="btn bc" onclick="addTraslado()">🔄 Registrar traslado</button>
+    </div>
+    <div class="card">
+      <div class="ct" style="color:var(--cold)">Historial traslados</div>
+      <div class="mlist" id="lista-traslados"><div class="loading">Cargando...</div></div>
+    </div>
+  </div>
+
+  <!-- MERMA -->
+  <div id="page-merma" class="page">
+    <div class="card" style="border-color:var(--red);border-width:2px">
+      <div class="ct" style="color:var(--red)">💀 Merma / Bajas</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="merm-fecha"></div>
+        <div class="field"><label>Cantidad</label><input type="number" min="1" id="merm-cantidad" placeholder="0"></div>
+        <div class="field"><label>Causa</label>
+          <select id="merm-tipo">
+            <option>Muerte natural</option>
+            <option>Enfermedad</option>
+            <option>Accidente</option>
+            <option>Sacrificio por enfermedad</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div class="field fc"><label>Descripción</label><input type="text" id="merm-nota" placeholder="Detalles..."></div>
+      </div>
+      <button class="btn br" onclick="addMerma()">💀 Registrar merma</button>
+    </div>
+    <div class="card">
+      <div class="ct" style="color:var(--red)">Resumen merma</div>
+      <div class="filtro-row" id="filtro-merma">
+        <button class="fbtn on" onclick="setFiltroMerma('semana',this)">Semana</button>
+        <button class="fbtn" onclick="setFiltroMerma('mes',this)">Mes</button>
+        <button class="fbtn" onclick="setFiltroMerma('todo',this)">Todo</button>
+      </div>
+      <div id="resumen-merma"></div>
+      <div class="mlist" id="lista-merma" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- CONDUCTOR -->
+  <div id="page-conductor" class="page">
+    <div class="card" style="background:linear-gradient(135deg,#1a1200,#0f0c00);border-color:#ff9800;border-width:2px">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:48px">🚚</div>
+        <div style="font-size:18px;font-weight:900;color:#ff9800" id="conductor-nombre-hdr">CONDUCTOR</div>
+      </div>
+      <!-- Base recibida -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px;text-align:center">
+        <div style="background:rgba(255,152,0,.1);border:1px solid rgba(255,152,0,.3);border-radius:12px;padding:12px">
+          <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase">Base</div>
+          <div style="font-size:22px;font-weight:900;color:#ff9800" id="cond-stat-base">$0</div>
+        </div>
+        <div style="background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.3);border-radius:12px;padding:12px">
+          <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase">Gastos</div>
+          <div style="font-size:22px;font-weight:900;color:var(--red)" id="cond-stat-gastos">$0</div>
+        </div>
+        <div style="background:rgba(0,200,81,.1);border:1px solid rgba(0,200,81,.3);border-radius:12px;padding:12px">
+          <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase">Saldo</div>
+          <div style="font-size:22px;font-weight:900;color:var(--grn)" id="cond-stat-saldo">$0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Registrar viaje -->
+    <div class="card" style="border-color:#ff9800;border-width:2px">
+      <div class="ct" style="color:#ff9800">📍 Registrar viaje</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="cond-fecha"></div>
+        <div class="field"><label>Base recibida</label><input type="number" id="cond-base" placeholder="$0" oninput="calcSaldoConductor()"></div>
+        <div class="field fc"><label>Ruta</label>
+          <select id="cond-ruta" onchange="setRutaConductor()">
+            <option value="">Seleccionar ruta...</option>
+            <option value="Montería|120000">Montería — $120.000</option>
+            <option value="Sahagún|100000">Sahagún — $100.000</option>
+            <option value="Ciénaga de Oro|120000">Ciénaga de Oro — $120.000</option>
+            <option value="San Carlos|100000">San Carlos — $100.000</option>
+            <option value="Planeta Rica|50000">Planeta Rica — $50.000</option>
+            <option value="Barranquilla|300000">Barranquilla — $300.000</option>
+            <option value="Montería+Ciénaga+San Carlos|250000">Montería+Ciénaga+San Carlos — $250.000</option>
+            <option value="otra|0">Otra ruta...</option>
+          </select>
+        </div>
+        <div class="field fc" id="cond-otra-wrap" style="display:none">
+          <label>Nombre ruta</label><input type="text" id="cond-otra-ruta" placeholder="Nombre de la ruta">
+        </div>
+        <div class="field"><label>Tarifa ruta</label><input type="number" id="cond-tarifa" placeholder="$0" oninput="calcSaldoConductor()"></div>
+        <div class="field"><label>Peajes</label><input type="number" id="cond-peajes" placeholder="20000" value="20000" oninput="calcSaldoConductor()"></div>
+        <div class="field"><label>Comida</label><input type="number" id="cond-acpm" placeholder="$0" oninput="calcSaldoConductor()"></div>
+        <div class="field"><label>Combustible</label><input type="number" id="cond-combustible" placeholder="$0" oninput="calcSaldoConductor()"></div>
+        <div class="field"><label>Otros gastos</label><input type="number" id="cond-otros" placeholder="$0" oninput="calcSaldoConductor()"></div>
+        <div class="field fc"><label>Nota</label><input type="text" id="cond-nota" placeholder="Observaciones..."></div>
+      </div>
+
+      <!-- Resumen -->
+      <div id="cond-resumen" style="background:rgba(255,152,0,.06);border:1px solid rgba(255,152,0,.2);border-radius:12px;padding:12px;margin:10px 0">
+        <div class="rrow"><span class="rl">Tarifa ruta</span><span class="rv" style="color:#ff9800" id="cond-r-tarifa">$0</span></div>
+        <div class="rrow"><span class="rl">Peajes</span><span class="rv r" id="cond-r-peajes">$0</span></div>
+        <div class="rrow"><span class="rl">Comida</span><span class="rv r" id="cond-r-acpm">$0</span></div>
+        <div class="rrow"><span class="rl">Combustible</span><span class="rv r" id="cond-r-comb">$0</span></div>
+        <div class="rrow"><span class="rl">Otros</span><span class="rv r" id="cond-r-otros">$0</span></div>
+        <div class="rrow" style="border-top:2px solid var(--border);margin-top:4px;padding-top:8px">
+          <span style="font-weight:900">Total gastos</span>
+          <span style="font-size:18px;font-weight:900;color:var(--red)" id="cond-r-total">$0</span>
+        </div>
+        <div class="rrow">
+          <span style="font-weight:900">Me deben pagar</span>
+          <span style="font-size:20px;font-weight:900;color:var(--grn)" id="cond-r-pagar">$0</span>
+        </div>
+        <div class="rrow">
+          <span style="font-weight:900">Saldo de base</span>
+          <span style="font-size:16px;font-weight:900" id="cond-r-saldo">$0</span>
+        </div>
+      </div>
+
+      <button class="btn" onclick="addViajeCondutor()" style="background:linear-gradient(135deg,#ff9800,#e65100);color:#000;font-size:16px;padding:16px">🚚 Registrar viaje</button>
+    </div>
+
+    <!-- Historial -->
+    <div class="card">
+      <div class="ct" style="color:#ff9800">Mis viajes</div>
+      <div class="mlist" id="lista-viajes-conductor"></div>
+    </div>
+  </div>
+
+  <!-- UTILIDAD POR VENTA -->
+  <div id="page-utilidad" class="page">
+    <div class="card" style="background:linear-gradient(135deg,#0a1f0a,#0d2b0d);border-color:var(--grn);border-width:2px">
+      <div class="ct">💰 Resumen de utilidad</div>
+      <div class="filtro-row" id="filtro-utilidad">
+        <button class="fbtn on" onclick="setFiltroUtilidad('hoy',this)">Hoy</button>
+        <button class="fbtn" onclick="setFiltroUtilidad('semana',this)">Semana</button>
+        <button class="fbtn" onclick="setFiltroUtilidad('mes',this)">Mes</button>
+        <button class="fbtn" onclick="setFiltroUtilidad('todo',this)">Todo</button>
+      </div>
+      <div id="utilidad-resumen"></div>
+    </div>
+    <div class="card">
+      <div class="ct">Detalle por venta</div>
+      <div id="utilidad-lista"></div>
+    </div>
+  </div>
+
+  <!-- LIQUIDACION CONDUCTOR -->
+  <div id="page-liquidacion" class="page">
+    <div class="card" style="border-color:#ff9800;border-width:2px">
+      <div class="ct" style="color:#ff9800">🤝 Liquidar conductor</div>
+      <div class="fg">
+        <div class="field fc"><label>Conductor</label>
+          <select id="liq-conductor">
+            <option value="DARIO VERGARA">Dario Vergara</option>
+            <option value="ELIOTH HOYOS">Elioth Hoyos</option>
+          </select>
+        </div>
+        <div class="field"><label>Desde</label><input type="date" id="liq-desde"></div>
+        <div class="field"><label>Hasta</label><input type="date" id="liq-hasta"></div>
+      </div>
+      <button class="btn" onclick="calcLiquidacion()" style="background:linear-gradient(135deg,#ff9800,#e65100);color:#000;margin-top:10px">📊 Calcular liquidación</button>
+    </div>
+    <div id="liq-resumen"></div>
+    <div id="liq-viajes"></div>
+
+    <!-- Liquidacion Jadis -->
+    <div class="card" style="border-color:var(--acc);border-width:2px;margin-top:12px">
+      <div class="ct">💚 Comisiones Jadis</div>
+      <div class="fg">
+        <div class="field"><label>Desde</label><input type="date" id="jad-desde"></div>
+        <div class="field"><label>Hasta</label><input type="date" id="jad-hasta"></div>
+      </div>
+      <button class="btn bg" onclick="calcComisionJadis()" style="margin-top:10px">📊 Calcular comisiones</button>
+      <div id="jadis-resumen" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <!-- ENTREGAS VENDEDORES -->
+  <div id="page-entregas" class="page">
+    <div class="card" style="border-color:var(--grn);border-width:2px">
+      <div class="ct">💵 Entregas de vendedores</div>
+      <div id="entregas-resumen" style="margin-bottom:12px"></div>
+      <div class="fg">
+        <div class="field fc"><label>Vendedor</label>
+          <select id="ent-vendedor">
+            <option value="Jadis">Jadis</option>
+            <option value="Kener">Kener</option>
+          </select>
+        </div>
+        <div class="field"><label>Fecha</label><input type="date" id="ent-fecha"></div>
+        <div class="field"><label>Monto entregado</label><input type="number" id="ent-monto" placeholder="$0"></div>
+        <div class="field fc"><label>Nota</label><input type="text" id="ent-nota" placeholder="Observaciones..."></div>
+      </div>
+      <button class="btn bg" onclick="addEntrega()">✅ Registrar entrega</button>
+      <div class="mlist" id="lista-entregas" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+  <!-- CAJA DIARIA -->
+  <div id="page-caja" class="page">
+    <div class="card" style="background:linear-gradient(135deg,#0a1f0a,#0d2b0d);border-color:var(--grn);border-width:2px">
+      <div class="ct">💵 Caja del día</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+        <div style="background:rgba(0,200,81,.1);border:1px solid rgba(0,200,81,.3);border-radius:12px;padding:12px">
+          <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase">Entradas</div>
+          <div style="font-size:20px;font-weight:900;color:var(--grn)" id="caja-entradas">$0</div>
+        </div>
+        <div style="background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.3);border-radius:12px;padding:12px">
+          <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase">Salidas</div>
+          <div style="font-size:20px;font-weight:900;color:var(--red)" id="caja-salidas">$0</div>
+        </div>
+        <div style="background:rgba(0,200,81,.1);border:1px solid rgba(0,200,81,.3);border-radius:12px;padding:12px">
+          <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase">Balance</div>
+          <div style="font-size:20px;font-weight:900" id="caja-balance">$0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Registrar movimiento caja -->
+    <div class="card">
+      <div class="ct">Registrar movimiento</div>
+      <div class="tsel">
+        <button class="tb on" id="caja-tb-entrada" onclick="setCajaTipo('entrada')" style="border-color:var(--grn);background:rgba(0,200,81,.1);color:var(--grn)">
+          <span style="font-size:24px">⬆️</span><span>Entrada</span>
+        </button>
+        <button class="tb" id="caja-tb-salida" onclick="setCajaTipo('salida')">
+          <span style="font-size:24px">⬇️</span><span>Salida</span>
+        </button>
+      </div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="caja-fecha"></div>
+        <div class="field"><label>Monto</label><input type="number" id="caja-monto" placeholder="$0"></div>
+        <div class="field fc"><label>Concepto</label><input type="text" id="caja-concepto" placeholder="Descripción..."></div>
+        <div class="field fc"><label>Categoría</label>
+          <select id="caja-categoria">
+            <option value="Ventas">Ventas</option>
+            <option value="Compras">Compras</option>
+            <option value="Nómina">Nómina</option>
+            <option value="Transporte">Transporte</option>
+            <option value="Servicios">Servicios</option>
+            <option value="Alimento">Alimento</option>
+            <option value="Otros">Otros</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn bg" onclick="addMovCaja()">💵 Registrar</button>
+    </div>
+
+    <!-- Historial caja -->
+    <div class="card">
+      <div class="ct">Historial caja</div>
+      <div class="filtro-row" id="filtro-caja">
+        <button class="fbtn on" onclick="setFiltroCaja('hoy',this)">Hoy</button>
+        <button class="fbtn" onclick="setFiltroCaja('semana',this)">Semana</button>
+        <button class="fbtn" onclick="setFiltroCaja('mes',this)">Mes</button>
+      </div>
+      <div id="lista-caja"></div>
+    </div>
+  </div>
+
+  <!-- GASTOS GENERALES -->
+  <div id="page-gastos" class="page">
+    <div class="card" style="border-color:var(--red);border-width:2px">
+      <div class="ct" style="color:var(--red)">📋 Gastos generales</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="gast-fecha"></div>
+        <div class="field"><label>Monto</label><input type="number" id="gast-monto" placeholder="$0"></div>
+        <div class="field fc"><label>Categoría</label>
+          <select id="gast-categoria">
+            <option value="Combustible ACPM">Combustible ACPM</option>
+            <option value="Arriendo">Arriendo</option>
+            <option value="Agua">Agua</option>
+            <option value="Luz">Luz</option>
+            <option value="Gas">Gas</option>
+            <option value="Combustible ACPM">Combustible ACPM</option>
+            <option value="Gasolina">Gasolina</option>
+            <option value="Internet">Internet</option>
+            <option value="Veterinario">Veterinario</option>
+            <option value="Medicamentos">Medicamentos</option>
+            <option value="Mantenimiento">Mantenimiento</option>
+            <option value="Papelería">Papelería</option>
+            <option value="Otros">Otros</option>
+          </select>
+        </div>
+        <div class="field fc"><label>Descripción</label><input type="text" id="gast-desc" placeholder="Detalles..."></div>
+      </div>
+      <button class="btn br" onclick="addGasto()">📋 Registrar gasto</button>
+    </div>
+
+    <!-- Resumen gastos -->
+    <div class="card">
+      <div class="ct" style="color:var(--red)">Resumen gastos</div>
+      <div class="filtro-row" id="filtro-gastos">
+        <button class="fbtn on" onclick="setFiltroGastos('mes',this)">Mes</button>
+        <button class="fbtn" onclick="setFiltroGastos('semana',this)">Semana</button>
+        <button class="fbtn" onclick="setFiltroGastos('todo',this)">Todo</button>
+      </div>
+      <div id="resumen-gastos"></div>
+      <div id="lista-gastos" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- CLIENTES -->\n  <div id="page-clientes" class="page">
+
+    <!-- Ranking -->
+    <div class="card" style="background:linear-gradient(135deg,#1a0a2b,#120a1f);border-color:var(--pur);border-width:2px">
+      <div class="ct" style="color:var(--pur)">🏆 Mejores clientes</div>
+      <div id="ranking-clientes"></div>
+    </div>
+
+    <!-- Alertas deuda vencida -->
+    <div class="card" style="border-color:var(--red);border-width:2px">
+      <div class="ct" style="color:var(--red)">⚠️ Deudas pendientes</div>
+      <div class="filtro-row" id="filtro-deuda">
+        <button class="fbtn on" onclick="setFiltroDeuda(7,this)">+7 días</button>
+        <button class="fbtn" onclick="setFiltroDeuda(15,this)">+15 días</button>
+        <button class="fbtn" onclick="setFiltroDeuda(30,this)">+30 días</button>
+      </div>
+      <div id="lista-deuda-vencida"></div>
+    </div>
+
+    <!-- Registrar cliente -->
+    <div class="card">
+      <div class="ct" style="color:var(--pur)">👤 Registrar cliente</div>
+      <div class="fg">
+        <div class="field fc"><label>Nombre</label><input type="text" id="cli-nombre" placeholder="Nombre completo" oninput="this.value=this.value.toUpperCase()"></div>
+        <div class="field"><label>Teléfono</label><input type="tel" id="cli-tel" placeholder="3001234567"></div>
+        <div class="field"><label>Ciudad</label><input type="text" id="cli-ciudad" placeholder="Ciudad..."></div>
+        <div class="field fc"><label>Nota</label><input type="text" id="cli-nota" placeholder="Observaciones..."></div>
+      </div>
+      <button class="btn bp" onclick="addCliente()" style="margin-top:10px">👤 Guardar cliente</button>
+    </div>
+
+    <!-- Lista -->
+    <div class="card">
+      <div class="ct" style="color:var(--pur)">Lista de clientes</div>
+      <input type="text" id="buscar-cliente-lista" placeholder="🔍 Buscar..." oninput="filtrarListaClientes(this.value)" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:11px;padding:10px 14px;color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;outline:none;margin-bottom:12px">
+      <div id="lista-clientes-reg"></div>
+    </div>
+  </div>
+
+  <!-- CREDITOS / CREDITOS -->
+  <div id="page-creditos" class="page">
+
+    <!-- Dashboard resumen -->
+    <div class="card" style="background:linear-gradient(135deg,#1a0d2b,#120a1f);border-color:var(--pur);border-width:2px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;margin-bottom:14px">
+        <div>
+          <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase">Clientes</div>
+          <div style="font-size:28px;font-weight:900;color:var(--pur)" id="dash-total-clientes">0</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase">Por cobrar</div>
+          <div style="font-size:18px;font-weight:900;color:var(--red)" id="dash-total-pendiente">$0</div>
+        </div>
+        <div>
+          <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase">Paz y salvo</div>
+          <div style="font-size:28px;font-weight:900;color:var(--grn)" id="dash-paz-salvo">0</div>
+        </div>
+      </div>
+      <input type="text" id="buscar-cliente" placeholder="🔍 Buscar cliente..." oninput="filtrarClientes(this.value)" style="width:100%;background:rgba(0,0,0,.3);border:1.5px solid rgba(206,147,216,.3);border-radius:11px;padding:12px 14px;color:var(--text);font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;outline:none">
+    </div>
+
+    <!-- Lista saldos -->
+    <div class="card">
+      <div class="ct" style="color:var(--pur)">Saldo por cliente</div>
+      <div id="lista-saldos"></div>
+    </div>
+
+    </div>
+
+    <!-- Historial -->
+    <div class="card">
+      <div class="ct" style="color:var(--pur)">Historial créditos y abonos</div>
+      <div class="filtro-row" id="filtro-creditos">
+        <button class="fbtn on" onclick="setFiltroCreditos('todos',this)">Todos</button>
+        <button class="fbtn" onclick="setFiltroCreditos('pendientes',this)">Pendientes</button>
+        <button class="fbtn" onclick="setFiltroCreditos('pagados',this)">Pagados</button>
+      </div>
+      <div id="lista-creditos"><div class="loading">Cargando...</div></div>
+    </div>
+  </div>
+
+<datalist id="lista-clientes-credito"></datalist>
+<datalist id="lista-tels-credito"></datalist>
+<datalist id="lista-vendedores"><option value="Jadis"><option value="Kener"></datalist>
+
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+  function esperarYEjecutar(fn, intentos) {
+    intentos = intentos || 0;
+    if (fn()) return;
+    if (intentos > 100) { alert("Sin conexión. Revisa tu internet y recarga."); return; }
+    setTimeout(function(){ esperarYEjecutar(fn, intentos + 1); }, 100);
+  }
+  document.getElementById("btn-jadis").onclick = function(){
+    esperarYEjecutar(function(){ if(window._doLogin){ window._doLogin("Jadis"); return true; } return false; });
+  };
+  document.getElementById("btn-kener").onclick = function(){
+    esperarYEjecutar(function(){ if(window._doLogin){ window._doLogin("Kener"); return true; } return false; });
+  };
+  document.getElementById("btn-dario").onclick = function(){
+    esperarYEjecutar(function(){ if(window._doLoginConductor){ window._doLoginConductor("DARIO VERGARA"); return true; } return false; });
+  };
+  document.getElementById("btn-elioth").onclick = function(){
+    esperarYEjecutar(function(){ if(window._doLoginConductor){ window._doLoginConductor("ELIOTH HOYOS"); return true; } return false; });
+  };
+  document.getElementById("btn-admin").onclick = function(){
+    esperarYEjecutar(function(){ if(window._doLoginAdmin){ window._doLoginAdmin(); return true; } return false; });
+  };
+});
+</script>
+
+<script type="module" defer>
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, deleteDoc, doc, query, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDkiU9sjBdivX-CPJmEL_14M5ph8pLphn4",
+  authDomain: "control-galpon-63f35.firebaseapp.com",
+  projectId: "control-galpon-63f35",
+  storageBucket: "control-galpon-63f35.firebasestorage.app",
+  messagingSenderId: "423009332493",
+  appId: "1:423009332493:web:eaca9154b5f8010b9b4e47"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// LOGIN - entra inmediatamente, Firebase carga en segundo plano
+window._doLoginConductor = (nombre) => {
+  USUARIO=nombre; ES_ADMIN=false; ES_CONDUCTOR=true; CONDUCTOR_NOMBRE=nombre;
+  iniciarApp();
+};
+window._doLogin = (usuario) => {
+  USUARIO=usuario; ES_ADMIN=false;
+  iniciarApp();
+};
+window._doLoginAdmin = () => {
+  const clave=prompt("Clave administrador:");
+  if(clave!==CLAVE_ADMIN){alert("Clave incorrecta");return;}
+  USUARIO="Admin"; ES_ADMIN=true;
+  iniciarApp();
+};
+
+function intentarIniciarApp(){}
+
+const BULTO_KG=40, BULTO_PRECIO=77500, HUEVOS_CANASTA=30;
+const WA="573107036496";
+const CLAVE_ADMIN="kaler2025";
+const ALERTA_STOCK_MIN=10;
+
+let USUARIO="";
+let ES_ADMIN=false;
+let ES_CONDUCTOR=false;
+let CONDUCTOR_NOMBRE="";
+let tipoVenta="";
+let tipoHuevo="";
+let tipoPagoGallina="contado";
+let tipoPagoHuevo="contado";
+let filtroVentas="hoy";
+let filtroAdmin="hoy";
+
+let DATA={
+  compras_vivas:[], compras_muertas:[], mortalidad:[],
+  ventas_gallina_viva:[], ventas_gallina_muerta:[], ventas_huevo:[],
+  postura:[], alimento:[], creditos:[], abonos:[], clientes:[],
+  traslados:[], mermas:[], sacrificios:[], cilindros:[], entregas:[], rutas_conductor:[], caja:[], gastos_generales:[], auditoria:[], pagos_conductor:[], pagos_jadis:[]
+};
+
+const fmtM = n=>(!n&&n!==0)?"-":"$"+Math.round(n).toLocaleString("es-CO");
+const fmtD = iso=>!iso?"":new Date(iso+"T12:00:00").toLocaleDateString("es-CO",{day:"2-digit",month:"short"});
+// Fecha y hora en zona horaria Colombia (UTC-5)
+const ahoraColombia=()=>new Date(new Date().toLocaleString("en-US",{timeZone:"America/Bogota"}));
+const hoy=()=>{const d=ahoraColombia();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");};
+const horaActual=()=>ahoraColombia().toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});
+const fechaActual=()=>ahoraColombia().toLocaleDateString("es-CO",{day:"2-digit",month:"2-digit",year:"numeric"});
+const sum=(arr,fn)=>(arr||[]).reduce((s,x)=>s+(fn(x)||0),0);
+const getVal=id=>document.getElementById(id)?.value||"";
+const clearF=ids=>ids.forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+
+// Stock real (puede ser negativo para mostrar deuda)
+const calcVivasReal=()=>sum(DATA.compras_vivas,x=>x.cantidad)-sum(DATA.ventas_gallina_viva,x=>x.cantidad)-sum(DATA.mortalidad,x=>x.cantidad)-sum(DATA.traslados,x=>x.cantidad)-sum(DATA.mermas,x=>x.cantidad);
+const calcEnfReal=()=>sum(DATA.compras_muertas,x=>x.cantidad)+sum(DATA.traslados,x=>x.cantidad)-sum(DATA.ventas_gallina_muerta,x=>x.cantidad);
+const calcVivas=()=>calcVivasReal();
+const calcEnf=()=>calcEnfReal();
+
+function fechaEnRango(fecha, rango){
+  const hoyStr=hoy();
+  if(rango==="hoy") return fecha===hoyStr;
+  if(rango==="semana"){
+    const d=ahoraColombia(); d.setDate(d.getDate()-7);
+    return fecha>=(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"));
+  }
+  if(rango==="mes"){
+    const d=ahoraColombia(); d.setDate(d.getDate()-30);
+    return fecha>=(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"));
+  }
+  return true;
+}
+
+window.cerrarSesion = () => {
+  if(!confirm("Cerrar sesion?")) return;
+  document.getElementById("app").style.display="none";
+  document.getElementById("login-screen").style.display="flex";
+  USUARIO=""; ES_ADMIN=false;
+};
+
+function iniciarApp(){
+  document.getElementById("login-screen").style.display="none";
+  document.getElementById("app").style.display="block";
+  document.getElementById("user-badge").textContent="👤 "+USUARIO;
+  document.getElementById("sidebar-user").textContent=USUARIO;
+  if(ES_ADMIN){
+    document.getElementById("menu-admin-btn").style.display="flex";
+    document.getElementById("menu-admin-section").style.display="block";
+    document.getElementById("menu-caja-btn").style.display="flex";
+    document.getElementById("menu-gastos-btn").style.display="flex";
+    document.getElementById("menu-utilidad-btn").style.display="flex";
+    document.getElementById("menu-liq-btn").style.display="flex";
+  }
+  if(ES_CONDUCTOR){
+    // conductor solo ve su página
+    document.getElementById("menu-admin-section").style.display="none";
+    navTo("conductor");
+    const hdrCond=document.getElementById("conductor-nombre-hdr");
+    if(hdrCond) hdrCond.textContent=CONDUCTOR_NOMBRE;
+  } else {
+    navTo("ventas");
+  }
+
+  // set fechas
+  ["vg-fecha","vh-fecha","cv-fecha","cm-fecha","mort-fecha","pos-fecha","al-fecha","fiad-fecha","abo-fecha","tras-fecha","merm-fecha","sac-fecha","gas-fecha","ent-fecha","cond-fecha","caja-fecha","gast-fecha"].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value=hoy();
+  });
+  document.getElementById("vg-usuario").value=USUARIO;
+  document.getElementById("vh-usuario").value=USUARIO;
+  document.getElementById("pos-usuario").value=USUARIO;
+
+  document.getElementById("fecha-hdr").textContent=
+    new Date().toLocaleDateString("es-CO",{day:"2-digit",month:"long",year:"numeric"}).toUpperCase();
+
+  iniciarListeners();
+}
+
+// FIREBASE LISTENERS
+function iniciarListeners(){
+  const cols=[
+    ["compras_vivas","compras_vivas"],
+    ["compras_muertas","compras_muertas"],
+    ["mortalidad","mortalidad"],
+    ["ventas_gallina_viva","ventas_gallina_viva"],
+    ["ventas_gallina_muerta","ventas_gallina_muerta"],
+    ["ventas_huevo","ventas_huevo"],
+    ["postura","postura"],
+    ["alimento","alimento"],
+    ["creditos","creditos"],
+    ["abonos","abonos"],
+    ["clientes","clientes"],
+    ["traslados","traslados"],
+    ["mermas","mermas"],
+    ["sacrificios","sacrificios"],
+    ["cilindros","cilindros"],
+    ["entregas","entregas"],
+    ["rutas_conductor","rutas_conductor"],
+    ["caja","caja"],
+    ["gastos_generales","gastos_generales"],
+    ["auditoria","auditoria"],
+    ["pagos_conductor","pagos_conductor"],
+    ["pagos_jadis","pagos_jadis"],
+  ];
+  cols.forEach(([col,key])=>{
+    const q=query(collection(db,col),orderBy("ts","desc"));
+    onSnapshot(q,snap=>{
+      DATA[key]=snap.docs.map(d=>({id:d.id,...d.data()}));
+      renderAll();
+    },err=>{setSyncStatus(false);});
+  });
+  setSyncStatus(true);
+}
+
+function setSyncStatus(ok){
+  const bar=document.getElementById("sync-bar");
+  const dot=document.getElementById("sync-dot");
+  const txt=document.getElementById("sync-txt");
+  const time=document.getElementById("sync-time");
+  if(ok){
+    bar?.classList.remove("sync-off");
+    if(dot){dot.style.background="var(--grn)";dot.style.animation="pulse 2s infinite";}
+    if(txt) txt.textContent="Sincronizado en tiempo real";
+    if(time) time.textContent=horaActual();
+  } else {
+    bar?.classList.add("sync-off");
+    if(dot){dot.style.background="var(--red)";dot.style.animation="none";}
+    if(txt) txt.textContent="Sin conexion";
+  }
+}
+
+async function addDoc2(colName, data){
+  try{
+    await addDoc(collection(db,colName),{...data,ts:serverTimestamp()});
+    setSyncStatus(true); return true;
+  }catch(e){setSyncStatus(false); return false;}
+}
+
+async function delDoc(colName,id){
+  try{
+    // guardar registro de auditoría antes de borrar
+    const colMap={
+      compras_vivas:"Compra vivas",compras_muertas:"Compra enfriador",
+      mortalidad:"Mortalidad",ventas_gallina_viva:"Venta gallina viva",
+      ventas_gallina_muerta:"Venta enfriador",ventas_huevo:"Venta huevo",
+      postura:"Postura",alimento:"Alimento",creditos:"Crédito",
+      abonos:"Abono",traslados:"Traslado",mermas:"Merma",
+      sacrificios:"Sacrificio",cilindros:"Cilindro",entregas:"Entrega",
+      rutas_conductor:"Ruta conductor",caja:"Caja",gastos_generales:"Gasto general",
+      clientes:"Cliente"
+    };
+    await addDoc(collection(db,"auditoria"),{
+      fecha:hoy(),hora:horaActual(),
+      accion:"ELIMINACION",
+      coleccion:colMap[colName]||colName,
+      id_eliminado:id,
+      usuario:USUARIO||"Admin",
+      ts:serverTimestamp()
+    });
+    await deleteDoc(doc(db,colName,id));
+  }catch(e){}
+}
+
+window.delItem=(col,id)=>{
+  pedirClaveAdmin(()=>delDoc(col,id));
+};
+
+const BANCOLOMBIA="*68776183834*\nBancolombia Ahorros\nTitular: Jems Hoyos";
+
+function waEnviar(tipo,cant,monto,vendedor,cliente){
+  const txt=encodeURIComponent(
+    "*COMPROBANTE DE VENTA* 🧾\n"+
+    "────────────────────\n"+
+    "📦 Producto: "+tipo+"\n"+
+    "🔢 Cantidad: "+cant+"\n"+
+    "💰 Total: "+(monto?"$"+Math.round(monto).toLocaleString("es-CO"):"Sin registrar")+"\n"+
+    "👤 Vendedor: "+vendedor+"\n"+
+    (cliente?"🛒 Cliente: "+cliente+"\n":"")+
+    "📅 "+fechaActual()+" "+horaActual()+"\n"+
+    "────────────────────\n"+
+    BANCOLOMBIA+"\n"+
+    "🐔 Granja Kaler"
+  );
+  window.location.href="https://wa.me/"+WA+"?text="+txt;
+}
+
+function waEnviarCredito(cliente,producto,cant,precio,monto,tel){
+  // buscar tel del cliente si no se pasó
+  const telFinal=tel||(DATA.clientes||[]).find(c=>c.nombre===cliente)?.tel||"";
+  if(!telFinal){msg("Cliente sin teléfono — comprobante no enviado");return;}
+  const num="57"+telFinal.replace(/\D/g,"");
+  const txt=encodeURIComponent(
+    "*VENTA A CRÉDITO* 💳\n"+
+    "────────────────────\n"+
+    "👤 Cliente: "+cliente+"\n"+
+    "📦 Producto: "+producto+"\n"+
+    "🔢 Cantidad: "+cant+"\n"+
+    (precio?"💲 Precio unit: $"+Math.round(precio).toLocaleString("es-CO")+"\n":"")+
+    "💰 Total: "+(monto?"$"+Math.round(monto).toLocaleString("es-CO"):"Sin registrar")+"\n"+
+    "📅 "+fechaActual()+" "+horaActual()+"\n"+
+    "────────────────────\n"+
+    BANCOLOMBIA+"\n"+
+    "🐔 Granja Kaler"
+  );
+  window.location.href="https://wa.me/"+num+"?text="+txt;
+}
+
+function waEnviarAbono(cliente,monto,saldoPendiente,tel){
+  const num=tel?"57"+tel.replace(/\D/g,""):WA;
+  const txt=encodeURIComponent(
+    "*COMPROBANTE DE ABONO* ✅\n"+
+    "────────────────────\n"+
+    "👤 Cliente: "+cliente+"\n"+
+    "💚 Abono recibido: "+"$"+Math.round(monto).toLocaleString("es-CO")+"\n"+
+    "📊 Saldo pendiente: "+(saldoPendiente>0?"$"+Math.round(saldoPendiente).toLocaleString("es-CO"):"✅ Paz y salvo")+"\n"+
+    "📅 "+fechaActual()+" "+horaActual()+"\n"+
+    "────────────────────\n"+
+    BANCOLOMBIA+"\n"+
+    "🐔 Granja Kaler"
+  );
+  window.location.href="https://wa.me/"+num+"?text="+txt;
+}
+
+// EFECTOS
+function efectoVenta(){
+  if(navigator.vibrate) navigator.vibrate([100,50,100]);
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const t=ctx.currentTime;
+    const o1=ctx.createOscillator(),g1=ctx.createGain();
+    o1.connect(g1);g1.connect(ctx.destination);
+    o1.frequency.setValueAtTime(1200,t);o1.frequency.exponentialRampToValueAtTime(800,t+0.1);
+    g1.gain.setValueAtTime(0.3,t);g1.gain.exponentialRampToValueAtTime(0.001,t+0.3);
+    o1.start(t);o1.stop(t+0.3);
+    const o2=ctx.createOscillator(),g2=ctx.createGain();
+    o2.connect(g2);g2.connect(ctx.destination);
+    o2.frequency.setValueAtTime(1600,t+0.15);o2.frequency.exponentialRampToValueAtTime(1000,t+0.35);
+    g2.gain.setValueAtTime(0.2,t+0.15);g2.gain.exponentialRampToValueAtTime(0.001,t+0.45);
+    o2.start(t+0.15);o2.stop(t+0.45);
+  }catch(e){}
+}
+
+function msg(txt){
+  const t=document.getElementById("toast");
+  if(!t) return;
+  t.textContent=txt;t.style.display="block";
+  setTimeout(()=>t.style.display="none",2500);
+}
+
+// TABS
+window.setTab=tab=>{
+  const tabs=["ventas","compras","postura","alimento","admin","creditos"];
+  document.querySelectorAll(".tab").forEach((b,i)=>b.classList.toggle("on",tabs[i]===tab));
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("on"));
+  const page=document.getElementById("page-"+tab);
+  if(page) page.classList.add("on");
+  if(tab==="admin") renderAdmin();
+  if(tab==="creditos") renderCreditos();
+};
+
+window.setTipoPago=(prefix,tipo)=>{
+  if(prefix==="vg") tipoPagoGallina=tipo;
+  else tipoPagoHuevo=tipo;
+  const isCredito=tipo==="credito";
+  const contadoBtn=document.getElementById(prefix+"-tipo-contado");
+  const creditoBtn=document.getElementById(prefix+"-tipo-credito");
+  const colOn=prefix==="vg"?"var(--grn)":"var(--acc2)";
+  const bgOn=prefix==="vg"?"rgba(0,200,81,.1)":"rgba(240,165,0,.1)";
+  if(contadoBtn){
+    contadoBtn.classList.toggle("on",!isCredito);
+    if(!isCredito){contadoBtn.style.borderColor=colOn;contadoBtn.style.background=bgOn;contadoBtn.style.color=colOn;}
+    else{contadoBtn.style.borderColor="";contadoBtn.style.background="";contadoBtn.style.color="";}
+  }
+  if(creditoBtn){
+    creditoBtn.classList.toggle("on",isCredito);
+    if(isCredito){creditoBtn.style.borderColor="var(--pur)";creditoBtn.style.background="rgba(206,147,216,.1)";creditoBtn.style.color="var(--pur)";}
+    else{creditoBtn.style.borderColor="";creditoBtn.style.background="";creditoBtn.style.color="";}
+  }
+};
+
+window.mostrarSeccionVenta=(tipo)=>{
+  document.getElementById("seccion-gallinas").style.display=tipo==="gallinas"?"block":"none";
+  document.getElementById("seccion-huevos").style.display=tipo==="huevos"?"block":"none";
+  const bg=document.getElementById("btn-sec-gallinas");
+  const bh=document.getElementById("btn-sec-huevos");
+  if(bg) bg.style.opacity=tipo==="gallinas"?"1":"0.5";
+  if(bh) bh.style.opacity=tipo==="huevos"?"1":"0.5";
+};
+
+window.setTipoVenta=t=>{
+  tipoVenta=t;
+  document.getElementById("tb-viva")?.classList.toggle("on",t==="viva");
+  document.getElementById("tb-muerta")?.classList.toggle("on",t==="muerta");
+  const v=calcVivasReal(),e=calcEnfReal();
+  const inf=document.getElementById("info-venta-gallina");
+  if(inf){
+    if(t==="viva") inf.textContent=v>=0?"Disponible galpon: "+v+" aves":"⚠️ Deuda galpon: "+v+" aves";
+    else inf.textContent=e>=0?"Disponible enfriador: "+e+" aves":"⚠️ Deuda enfriador: "+e+" aves";
+    inf.style.borderLeftColor=((t==="viva"&&v<0)||(t==="muerta"&&e<0))?"var(--red)":"var(--acc)";
+    inf.style.color=((t==="viva"&&v<0)||(t==="muerta"&&e<0))?"var(--red)":"";
+  }
+};
+
+window.setTipoHuevo=t=>{
+  tipoHuevo=t;
+  document.getElementById("tb-canasta")?.classList.toggle("on",t==="canasta");
+  document.getElementById("tb-suelto")?.classList.toggle("on",t==="suelto");
+  const lc=document.getElementById("lbl-cant-huevo");
+  const lp=document.getElementById("lbl-precio-huevo");
+  if(lc) lc.textContent=t==="canasta"?"Canastas":"Huevos";
+  if(lp) lp.textContent=t==="canasta"?"Precio canasta":"Precio unitario";
+};
+
+window.setFiltroVentas=(f,btn)=>{
+  filtroVentas=f;
+  document.querySelectorAll("#filtro-ventas .fbtn").forEach(b=>b.classList.remove("on"));
+  btn.classList.add("on");
+  renderVentas();
+};
+
+window.setFiltroAdmin=(f,btn)=>{
+  filtroAdmin=f;
+  document.querySelectorAll("#page-admin .filtro-row .fbtn").forEach(b=>b.classList.remove("on"));
+  btn.classList.add("on");
+  renderAdmin();
+};
+
+function actualizarUtilidadVenta(){
+  const cant=+document.getElementById("vg-cantidad")?.value||0;
+  const precioVenta=+document.getElementById("vg-precio")?.value||0;
+  const transporte=+document.getElementById("vg-transporte")?.value||0;
+  const conductor=+document.getElementById("vg-conductor")?.value||0;
+  const otros=+document.getElementById("vg-otros")?.value||0;
+  if(!cant&&!precioVenta) return;
+  const comprasRef=tipoVenta==="viva"?DATA.compras_vivas:DATA.compras_muertas;
+  const costoAve=comprasRef.length>0?(comprasRef[0].costo_por_ave||comprasRef[0].precio_unitario||0):0;
+  const costoAves=costoAve*cant;
+  const montoVenta=precioVenta*cant;
+  const gastosVenta=transporte+conductor+otros;
+  const utilidad=montoVenta-costoAves-gastosVenta;
+  const box=document.getElementById("vg-utilidad-box");
+  if(box) box.style.display=(cant||precioVenta)?"block":"none";
+  const fmt=n=>"$"+Math.round(n).toLocaleString("es-CO");
+  const el=(id,val,col)=>{const e=document.getElementById(id);if(e){e.textContent=fmt(val);e.style.color=col||"";}};
+  el("vg-info-costo-ave",costoAve,"var(--cold)");
+  el("vg-info-costo-total",costoAves,"var(--cold)");
+  el("vg-info-gastos",gastosVenta,"var(--red)");
+  el("vg-info-venta",montoVenta,"var(--grn)");
+  const uel=document.getElementById("vg-info-utilidad");
+  if(uel){uel.textContent=fmt(utilidad);uel.style.color=utilidad>=0?"var(--grn)":"var(--red)";}
+}
+
+// SIDEBAR
+window.openSidebar=()=>{
+  document.getElementById("sidebar").style.left="0";
+  document.getElementById("sidebar-overlay").style.display="block";
+};
+window.closeSidebar=()=>{
+  document.getElementById("sidebar").style.left="-280px";
+  document.getElementById("sidebar-overlay").style.display="none";
+};
+
+// Deslizar desde la izquierda para abrir el menu
+(()=>{
+  let startX=0,startY=0,dragging=false;
+  document.addEventListener("touchstart",e=>{
+    startX=e.touches[0].clientX;
+    startY=e.touches[0].clientY;
+    dragging=startX<30; // solo si empieza desde el borde izquierdo
+  },{passive:true});
+  document.addEventListener("touchmove",e=>{
+    if(!dragging) return;
+    const dx=e.touches[0].clientX-startX;
+    const dy=Math.abs(e.touches[0].clientY-startY);
+    if(dx>40&&dy<60) openSidebar();
+  },{passive:true});
+  document.addEventListener("touchend",()=>{dragging=false;});
+  // deslizar a la izquierda dentro del sidebar para cerrar
+  const sb=document.getElementById("sidebar");
+  let sbStartX=0;
+  if(sb){
+    sb.addEventListener("touchstart",e=>{sbStartX=e.touches[0].clientX;},{passive:true});
+    sb.addEventListener("touchmove",e=>{
+      if(sbStartX-e.touches[0].clientX>60) closeSidebar();
+    },{passive:true});
+  }
+})();
+
+window.navTo=tab=>{
+  closeSidebar();
+  const allPages=["ventas","compras","postura","alimento","admin","creditos","traslado","merma","sacrificio","clientes","conductor","caja","gastos","entregas","utilidad","liquidacion"];
+  allPages.forEach(p=>{const el=document.getElementById("page-"+p);if(el)el.classList.remove("on");});
+  const page=document.getElementById("page-"+tab);
+  if(page) page.classList.add("on");
+  document.querySelectorAll(".menu-item").forEach(b=>b.classList.remove("on"));
+  const btn=document.querySelector(`.menu-item[onclick="navTo('${tab}')"]`);
+  if(btn) btn.classList.add("on");
+  if(tab==="admin") renderAdmin();
+  if(tab==="creditos") renderCreditos();
+  if(tab==="traslado"){
+    const g=document.getElementById("tras-info-galpon");
+    const e=document.getElementById("tras-info-enf");
+    if(g) g.textContent=calcVivasReal();
+    if(e) e.textContent=calcEnfReal();
+  }
+  if(ES_CONDUCTOR){
+    const mb=document.getElementById("menu-conductor-btn");
+    if(mb) mb.style.display="flex";
+  }
+  if(tab==="utilidad") renderUtilidad();
+  if(tab==="liquidacion"){
+    const el=document.getElementById("liq-desde");
+    const el2=document.getElementById("liq-hasta");
+    if(el&&!el.value){const d=new Date();d.setDate(d.getDate()-7);el.value=d.toISOString().split("T")[0];}
+    if(el2&&!el2.value) el2.value=hoy();
+  }
+  if(tab==="entregas") renderEntregas();
+  if(tab==="caja") renderCaja();
+  if(tab==="gastos") renderGastos();
+  if(tab==="conductor"){actualizarStatsConductor();renderViajesConductor();}
+  if(tab==="clientes"){renderListaClientes();renderRankingClientes();renderDeudaVencida();}
+  if(tab==="sacrificio") iniciarPersonalSac();
+  if(tab==="merma") renderMerma();
+};
+
+// TRASLADO y MERMA datos
+let filtroMerma="semana";
+
+let diasDeuda=7;
+window.setFiltroDeuda=(dias,btn)=>{
+  diasDeuda=dias;
+  document.querySelectorAll("#filtro-deuda .fbtn").forEach(b=>b.classList.remove("on"));
+  btn.classList.add("on");
+  renderDeudaVencida();
+};
+
+function renderRankingClientes(){
+  const ranking=document.getElementById("ranking-clientes");
+  if(!ranking) return;
+
+  // calcular compras por cliente
+  const comprasPorCliente={};
+  [...(DATA.ventas_gallina_viva||[]),...(DATA.ventas_gallina_muerta||[]),...(DATA.ventas_huevo||[])].forEach(v=>{
+    if(!v.cliente) return;
+    if(!comprasPorCliente[v.cliente]) comprasPorCliente[v.cliente]={total:0,compras:0};
+    comprasPorCliente[v.cliente].total+=(v.monto_total||0);
+    comprasPorCliente[v.cliente].compras++;
+  });
+
+  const top=Object.entries(comprasPorCliente).sort((a,b)=>b[1].total-a[1].total).slice(0,5);
+  if(!top.length){ranking.innerHTML='<div class="empty">Sin historial de clientes</div>';return;}
+
+  const medallas=["🥇","🥈","🥉","4️⃣","5️⃣"];
+  ranking.innerHTML=top.map(([cliente,d],i)=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:24px">${medallas[i]}</span>
+        <div>
+          <div style="font-weight:800;font-size:14px">${cliente}</div>
+          <div style="font-size:11px;color:var(--muted)">${d.compras} compra${d.compras>1?"s":""}</div>
+        </div>
+      </div>
+      <div style="font-size:16px;font-weight:900;color:var(--pur)">${fmtM(d.total)}</div>
+    </div>`).join("");
+}
+
+function renderDeudaVencida(){
+  const lista=document.getElementById("lista-deuda-vencida");
+  if(!lista) return;
+
+  const hoyStr=hoy();
+  const hoyDate=new Date(hoyStr+"T12:00:00");
+
+  // buscar creditos con deuda y calcular dias
+  const saldos={};
+  (DATA.creditos||[]).forEach(f=>{
+    if(!f.cliente) return;
+    if(!saldos[f.cliente]) saldos[f.cliente]={total:0,abonado:0,ultimaFecha:f.fecha,tel:f.tel||""};
+    saldos[f.cliente].total+=(f.monto_total||0);
+    if(f.fecha>saldos[f.cliente].ultimaFecha) saldos[f.cliente].ultimaFecha=f.fecha;
+  });
+  (DATA.abonos||[]).forEach(a=>{
+    if(!saldos[a.cliente]) return;
+    saldos[a.cliente].abonado+=(a.monto_abono||0);
+  });
+
+  const vencidos=Object.entries(saldos)
+    .filter(([,s])=>s.total-s.abonado>0)
+    .map(([cliente,s])=>{
+      const fechaDeuda=new Date(s.ultimaFecha+"T12:00:00");
+      const dias=Math.floor((hoyDate-fechaDeuda)/(1000*60*60*24));
+      return{cliente,pendiente:s.total-s.abonado,dias,tel:s.tel};
+    })
+    .filter(x=>x.dias>=diasDeuda)
+    .sort((a,b)=>b.dias-a.dias);
+
+  if(!vencidos.length){lista.innerHTML='<div class="empty">Sin deudas mayores a '+diasDeuda+' días</div>';return;}
+
+  lista.innerHTML=vencidos.map(v=>`
+    <div style="background:rgba(255,68,68,.06);border:1px solid rgba(255,68,68,.2);border-radius:12px;padding:12px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-weight:800;font-size:15px">${v.cliente}</div>
+          <div style="font-size:12px;color:var(--red);font-weight:700">${v.dias} días sin pagar</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:18px;font-weight:900;color:var(--red)">${fmtM(v.pendiente)}</div>
+          ${v.tel?`<button onclick="window.location.href='https://wa.me/57${v.tel.replace(/\\D/g,'')}?text='+encodeURIComponent('Hola ${v.cliente}, tiene un saldo pendiente de \$${Math.round(v.pendiente).toLocaleString('es-CO')} con Granja Kaler. Por favor ponerse al día. *68776183834* Bancolombia Ahorros Titular: Jems Hoyos')" style="background:rgba(37,211,102,.15);border:1px solid rgba(37,211,102,.3);color:#25d366;border-radius:8px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-top:4px">📲 Cobrar</button>`:""}
+        </div>
+      </div>
+    </div>`).join("");
+}
+
+window.addCliente=async()=>{
+  const nombre=(getVal("cli-nombre")||"").toUpperCase().trim();
+  if(!nombre) return msg("Ingresa el nombre del cliente");
+  const existe=(DATA.clientes||[]).find(c=>c.nombre===nombre);
+  if(existe) return msg("Este cliente ya existe");
+  const ok=await addDoc2("clientes",{
+    nombre,tel:getVal("cli-tel")||"",
+    ciudad:getVal("cli-ciudad")||"",
+    nota:getVal("cli-nota")||""
+  });
+  if(ok){
+    clearF(["cli-nombre","cli-tel","cli-ciudad","cli-nota"]);
+    msg("Cliente guardado ✅");
+    renderListaClientes();
+  }
+};
+
+function renderListaClientes(filtro){
+  const lista=document.getElementById("lista-clientes-reg");
+  if(!lista) return;
+  let clientes=DATA.clientes||[];
+  if(filtro) clientes=clientes.filter(c=>c.nombre.includes(filtro.toUpperCase()));
+  if(!clientes.length){lista.innerHTML='<div class="empty">Sin clientes registrados</div>';return;}
+  lista.innerHTML=clientes.map(c=>`
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-weight:800;font-size:15px">${c.nombre}</div>
+        ${c.tel?`<div style="font-size:12px;color:var(--muted)">${c.tel}${c.ciudad?" · "+c.ciudad:""}</div>`:""}
+        ${c.nota?`<div style="font-size:11px;color:var(--muted);font-style:italic">${c.nota}</div>`:""}
+      </div>
+      <div style="display:flex;gap:6px">
+        ${c.tel?`<button onclick="window.location.href='tel:${c.tel}'" style="background:rgba(0,200,81,.1);border:1px solid rgba(0,200,81,.3);color:var(--grn);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer">📞</button>`:""}
+        ${c.tel?`<button onclick="window.location.href='https://wa.me/57${c.tel}'" style="background:rgba(37,211,102,.1);border:1px solid rgba(37,211,102,.3);color:#25d366;border-radius:8px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer">💬</button>`:""}
+        <button onclick="delItem('clientes','${c.id}')" style="background:rgba(255,68,68,.1);border:none;color:var(--red);border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer">✕</button>
+      </div>
+    </div>`).join("");
+}
+
+window.filtrarListaClientes=(q)=>renderListaClientes(q);
+
+window.editarGastosVenta=async(colName,id,gastosActuales)=>{
+  pedirClaveAdmin(async()=>{
+    const venta=[...(DATA.ventas_gallina_viva||[]),...(DATA.ventas_gallina_muerta||[])].find(v=>v.id===id);
+    const transporte=venta?.transporte||0;
+    const conductor=venta?.conductor||0;
+    const otros=venta?.otros_gastos||0;
+    const precioActual=venta?.precio_unitario||0;
+    const rutaActual=venta?.ruta||"";
+    const conductorNombre=venta?.conductor_nombre||"";
+
+    const t=prompt("🚚 Gasto transporte:\n(Actual: $"+Math.round(transporte).toLocaleString("es-CO")+")",''+Math.round(transporte));
+    if(t===null) return;
+    const c=prompt("👨‍✈️ Pago conductor:\n(Actual: $"+Math.round(conductor).toLocaleString("es-CO")+")",''+Math.round(conductor));
+    if(c===null) return;
+    const o=prompt("➕ Otros gastos:\n(Actual: $"+Math.round(otros).toLocaleString("es-CO")+")",''+Math.round(otros));
+    if(o===null) return;
+    const p=prompt("💲 Precio unitario:\n(Actual: $"+Math.round(precioActual).toLocaleString("es-CO")+")",''+Math.round(precioActual));
+    if(p===null) return;
+    const ruta=prompt("🗺️ Ruta/Destino:\n(Actual: "+(rutaActual||"Sin ruta")+")",rutaActual);
+    if(ruta===null) return;
+    const cNombre=prompt("👤 Nombre conductor:\n(Actual: "+(conductorNombre||"Sin conductor")+")",conductorNombre);
+    if(cNombre===null) return;
+
+    const nuevoTransporte=+t||0;
+    const nuevoConductor=+c||0;
+    const nuevoOtros=+o||0;
+    const nuevoPrecio=+p||precioActual;
+    const totalGastos=nuevoTransporte+nuevoConductor+nuevoOtros;
+    const nuevoMonto=nuevoPrecio*(venta?.cantidad||1);
+
+    try{
+      const {updateDoc}=await import(

@@ -2,12 +2,10 @@
   "name": "Granja Kaler",
   "short_name": "Granja Kaler",
   "description": "Control de gallinas descarte",
-  "start_url": "/granja-kaler/",
-  "scope": "/granja-kaler/",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#0a0f0d",
-  "theme_color": "#0a0f0d",
-  "orientation": "portrait",
+  "theme_color": "#00c851",
   "icons": [
     {
       "src": "icon-192.png",

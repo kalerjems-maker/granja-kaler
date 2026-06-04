@@ -1,1 +1,1509 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0a0f0d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Granja Kaler">
+<meta name="application-name" content="Granja Kaler">
+<meta name="description" content="Control de gallinas descarte - Granja Kaler">
+<link rel="manifest" href="data:application/json;charset=utf-8,{%22name%22:%22Granja%20Kaler%22,%22short_name%22:%22Granja%20Kaler%22,%22description%22:%22Control%20de%20gallinas%20descarte%20-%20Granja%20Kaler%22,%22start_url%22:%22/%22,%22scope%22:%22/%22,%22display%22:%22standalone%22,%22background_color%22:%22%230a0f0d%22,%22theme_color%22:%22%2300c851%22,%22orientation%22:%22portrait-primary%22,%22lang%22:%22es%22,%22icons%22:[{%22src%22:%22icon-192.png%22,%22sizes%22:%22192x192%22,%22type%22:%22image/png%22,%22purpose%22:%22any%20maskable%22},{%22src%22:%22icon-512.png%22,%22sizes%22:%22512x512%22,%22type%22:%22image/png%22,%22purpose%22:%22any%20maskable%22}]}">
+<title>Granja Kaler</title>
+<script>
+if('serviceWorker' in navigator){
+  const swCode=`const CACHE='granja-kaler-v2';
+self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['/']))));
+self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).catch(()=>caches.match(e.request))));`;
+  const blob=new Blob([swCode],{type:'application/javascript'});
+  const url=URL.createObjectURL(blob);
+  navigator.serviceWorker.register(url).catch(()=>{});
+}
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0f0d;--s1:#111915;--s2:#162019;--border:#1e3028;--text:#e8f5ee;--muted:#6b8c78;--acc:#00c851;--acc2:#f0a500;--grn:#00c851;--red:#ff4444;--cold:#4fc3f7;--pur:#ce93d8;--wa:#25d366}
+body{background:var(--bg);color:var(--text);font-family:'Outfit',sans-serif;min-height:100vh}
 
+/* LOGIN */
+#login-screen{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px}
+.login-logo{font-size:64px;margin-bottom:16px}
+.login-title{font-size:28px;font-weight:900;color:var(--text);margin-bottom:4px}
+.login-title span{color:var(--acc)}
+.login-sub{font-size:13px;color:var(--muted);margin-bottom:36px;font-weight:600}
+.login-btns{display:flex;flex-direction:column;gap:12px;width:100%;max-width:320px}
+.login-btn{border:2px solid var(--border);border-radius:16px;padding:18px;background:var(--s1);color:var(--text);font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:12px}
+.login-btn:active{transform:scale(.97)}
+.login-btn.jadis{border-color:var(--acc)}
+.login-btn.kener{border-color:var(--cold)}
+.login-btn.admin{border-color:var(--acc2)}
+.login-icon{font-size:28px}
+
+/* APP */
+.app{max-width:480px;margin:0 auto;padding:0 0 100px;display:none}
+
+/* HEADER */
+.hdr{background:linear-gradient(135deg,#0d2b1a,#0a1f12);padding:20px 16px 16px;border-bottom:2px solid var(--acc)}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.logo-row{display:flex;align-items:center;gap:10px}
+.logo-icon{font-size:30px}
+.logo-text h1{font-size:22px;font-weight:900;letter-spacing:-1px}
+.logo-text h1 span{color:var(--acc)}
+.logo-text .sub{font-size:11px;color:var(--muted);font-weight:600}
+.user-badge{background:rgba(0,200,81,.15);border:1px solid rgba(0,200,81,.3);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:800;color:var(--acc);cursor:pointer}
+.hdr-date{font-size:10px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:6px}
+
+/* SYNC */
+.sync-bar{background:rgba(0,200,81,.06);border:1px solid rgba(0,200,81,.15);margin:12px 14px 0;border-radius:10px;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;font-size:12px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--grn);display:inline-block;margin-right:7px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.sync-off .sync-dot{background:var(--red);animation:none}
+
+/* ALERTA STOCK */
+.alerta-stock{background:rgba(255,68,68,.08);border:1.5px solid rgba(255,68,68,.3);margin:10px 14px 0;border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;color:var(--red);display:none}
+
+/* STATS */
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px 14px 0}
+.stat{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px;position:relative;overflow:hidden}
+.stat::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px}
+.stat:nth-child(1)::after{background:var(--grn)}
+.stat:nth-child(2)::after{background:var(--cold)}
+.stat:nth-child(3)::after{background:var(--acc2)}
+.stat:nth-child(4)::after{background:var(--pur)}
+.sl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:700}
+.sv{font-size:28px;font-weight:900;line-height:1}
+.sv.g{color:var(--grn)}.sv.y{color:var(--acc2)}.sv.r{color:var(--red)}.sv.b{color:var(--cold)}.sv.p{color:var(--pur);font-size:16px;margin-top:4px}
+.sv-sub{font-size:11px;color:var(--muted);margin-top:3px;font-weight:600}
+
+/* TABS */
+.tabs{display:flex;gap:0;margin:12px 14px 0;background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:4px;overflow-x:auto}
+.tab{flex:1;min-width:56px;padding:9px 4px;border:none;border-radius:9px;background:transparent;color:var(--muted);font-family:'Outfit',sans-serif;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .2s}
+.tab.on{background:var(--acc);color:#000;box-shadow:0 2px 10px rgba(0,200,81,.3)}
+.tab.admin-tab{color:var(--acc2)}
+.tab.admin-tab.on{background:var(--acc2);color:#000}
+.page{display:none}.page.on{display:block}
+
+/* CARDS */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:16px;margin:12px 14px 0}
+.ct{font-size:12px;font-weight:800;color:var(--acc);margin-bottom:14px;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:7px}
+.ct::before{content:'';width:3px;height:18px;background:var(--acc);border-radius:2px;display:block}
+.ct.y{color:var(--acc2)}.ct.y::before{background:var(--acc2)}
+
+/* FORMS */
+.fg{display:grid;gap:10px;grid-template-columns:1fr 1fr}
+.fc{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px}
+.field input,.field select{background:var(--bg);border:1.5px solid var(--border);border-radius:11px;padding:12px 14px;color:var(--text);font-family:'Outfit',sans-serif;font-size:16px;font-weight:600;outline:none;transition:all .2s;width:100%}
+.field input:focus,.field select:focus{border-color:var(--acc);box-shadow:0 0 0 3px rgba(0,200,81,.1)}
+.field select option{background:#111915}
+
+/* BUTTONS */
+.btn{border:none;border-radius:13px;padding:14px 18px;font-family:'Outfit',sans-serif;font-size:14px;font-weight:800;cursor:pointer;transition:all .2s;width:100%;margin-top:10px;letter-spacing:.3px}
+.btn:active{transform:scale(.97)}
+.ba{background:linear-gradient(135deg,#f0a500,#e09000);color:#000;box-shadow:0 3px 12px rgba(240,165,0,.3)}
+.bc{background:linear-gradient(135deg,#4fc3f7,#0288d1);color:#000}
+.bg{background:linear-gradient(135deg,#00c851,#00a040);color:#000;box-shadow:0 3px 12px rgba(0,200,81,.3)}
+.br{background:linear-gradient(135deg,#ff4444,#cc0000);color:#fff}
+.bp{background:linear-gradient(135deg,#ce93d8,#9c27b0);color:#fff}
+
+/* TYPE SELECTOR */
+.tsel{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.tb{background:var(--bg);border:2px solid var(--border);border-radius:13px;padding:14px 8px;cursor:pointer;color:var(--muted);font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;text-align:center;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:6px}
+.tb.on{border-color:var(--acc);background:rgba(0,200,81,.08);color:var(--acc)}
+
+/* MONTO DISPLAY */
+.monto-display{font-size:30px;font-weight:900;text-align:center;padding:10px 0;min-height:52px;color:var(--grn)}
+
+/* MOVIMIENTOS */
+.mlist{display:flex;flex-direction:column;gap:7px}
+.mov{background:var(--s2);border:1px solid var(--border);border-radius:13px;padding:12px 14px;display:grid;grid-template-columns:32px 1fr auto;gap:8px;align-items:start}
+.mi{font-size:20px;padding-top:2px}
+.mt{font-size:13px;font-weight:800}
+.mm{font-size:11px;color:var(--muted);font-weight:600;margin-top:2px}
+.mn{font-size:11px;color:var(--muted);margin-top:3px;font-style:italic}
+.mr{text-align:right}
+.mq{font-size:18px;font-weight:900;font-family:'JetBrains Mono',monospace}
+.ma{font-size:11px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px}
+.xbtn{background:rgba(255,68,68,.1);border:none;color:var(--red);cursor:pointer;font-size:12px;padding:3px 7px;border-radius:6px;display:block}
+
+/* TABLA */
+.ptable{width:100%;border-collapse:collapse;font-size:13px}
+.ptable th{text-align:left;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:6px 8px;border-bottom:1px solid var(--border);font-weight:800}
+.ptable td{padding:9px 8px;border-bottom:1px solid rgba(30,48,40,.5);font-weight:600}
+.ptable tr:last-child td{border-bottom:none}
+.pbar{background:var(--bg);border-radius:4px;height:6px;overflow:hidden;width:65px;display:inline-block;vertical-align:middle;margin-left:6px}
+.pfill{height:100%;border-radius:4px}
+
+/* RESUMEN */
+.rrow{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(30,48,40,.4);font-size:14px}
+.rrow:last-child{border-bottom:none}
+.rl{color:var(--muted);font-weight:600}
+.rv{font-weight:800;font-family:'JetBrains Mono',monospace}
+.rv.g{color:var(--grn)}.rv.y{color:var(--acc2)}.rv.r{color:var(--red)}.rv.b{color:var(--cold)}
+.rg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 14px 0}
+.rg2 .card{margin:0}
+
+/* GRAFICA */
+.grafica-bar{display:flex;align-items:flex-end;gap:4px;height:120px;padding:0 4px}
+.gbar{flex:1;border-radius:6px 6px 0 0;min-width:20px;position:relative;transition:height .3s}
+.gbar-label{font-size:9px;color:var(--muted);text-align:center;margin-top:4px;font-weight:700}
+.gbar-val{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:800;white-space:nowrap}
+
+/* FILTRO FECHA */
+.filtro-row{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto}
+.fbtn{background:var(--s1);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;transition:all .15s}
+.fbtn.on{background:var(--acc);color:#000;border-color:var(--acc)}
+
+/* MISC */
+.hint{background:rgba(240,165,0,.06);border:1.5px solid rgba(240,165,0,.2);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.ht{font-size:10px;color:var(--acc2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:800}
+.hg{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.hi-l{font-size:10px;color:var(--muted);font-weight:700}
+.hi-v{font-size:16px;font-weight:900;color:var(--acc2);margin-top:3px}
+.info{font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:600;padding:9px 12px;background:rgba(0,200,81,.05);border-radius:9px;border-left:3px solid var(--acc)}
+.empty{text-align:center;color:var(--muted);padding:28px;font-size:13px;font-weight:600}
+.loading{text-align:center;color:var(--muted);padding:28px;font-size:13px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#00c851,#00a040);color:#000;padding:11px 22px;border-radius:12px;font-weight:800;font-size:13px;z-index:9999;box-shadow:0 4px 20px rgba(0,200,81,.4);white-space:nowrap;display:none}
+.menu-item{display:flex;align-items:center;gap:12px;width:100%;background:transparent;border:none;border-radius:10px;padding:11px 12px;color:var(--muted);font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;cursor:pointer;text-align:left;transition:all .15s;margin-bottom:2px}
+.menu-item:hover{background:rgba(0,200,81,.06);color:var(--text)}
+.menu-item.on{background:rgba(0,200,81,.12);color:var(--acc);border-left:3px solid var(--acc)}
+.menu-item.admin-menu.on{background:rgba(240,165,0,.12);color:var(--acc2);border-left:3px solid var(--acc2)}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-logo">🐔</div>
+  <div class="login-title">GRANJA <span>KALER</span></div>
+  <div class="login-sub">Selecciona tu usuario</div>
+  <div class="login-btns">
+    <button id="btn-jadis" class="login-btn jadis">
+      <span class="login-icon">👩</span>
+      <span>Jadis</span>
+    </button>
+    <button id="btn-kener" class="login-btn kener">
+      <span class="login-icon">👨</span>
+      <span>Kener</span>
+    </button>
+    <button id="btn-conductor" class="login-btn" style="border-color:#ff9800" onclick="mostrarSelectConductor()">
+      <span class="login-icon">🚚</span>
+      <span>Conductor</span>
+    </button>
+    <div id="conductor-select" style="display:none;width:100%;display:none">
+      <button id="btn-dario" class="login-btn" style="border-color:#ff9800;opacity:.85">
+        <span class="login-icon">🚚</span>
+        <span>Dario Vergara</span>
+      </button>
+      <button id="btn-elioth" class="login-btn" style="border-color:#ff9800;opacity:.85;margin-top:8px">
+        <span class="login-icon">🚚</span>
+        <span>Elioth Hoyos</span>
+      </button>
+    </div>
+    <button id="btn-admin" class="login-btn admin">
+      <span class="login-icon">🔐</span>
+      <span>Administrador</span>
+    </button>
+    <button id="btn-katy" class="login-btn admin" style="border-color:#e91e63">
+      <span class="login-icon">👩‍💼</span>
+      <span>Katy</span>
+    </button>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app">
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="logo-row">
+        <div class="logo-icon">🐔</div>
+        <div class="logo-text">
+          <h1>GRANJA <span>KALER</span></h1>
+          <div class="sub">Control de Gallinas Descarte</div>
+        </div>
+      </div>
+      <div class="user-badge" id="user-badge" onclick="cerrarSesion()">👤 —</div>
+      <button onclick="openSidebar()" style="background:rgba(0,200,81,.15);border:1px solid rgba(0,200,81,.3);border-radius:10px;padding:8px 12px;color:var(--acc);font-size:18px;cursor:pointer">☰</button>
+    </div>
+    <div class="hdr-date" id="fecha-hdr"></div>
+  </div>
+
+  <div class="sync-bar" id="sync-bar">
+    <div><span class="sync-dot" id="sync-dot"></span><span id="sync-txt">Conectando...</span></div>
+    <span style="font-size:10px;color:var(--muted)" id="sync-time"></span>
+  </div>
+
+  <div id="panel-kpis">
+  <div class="alerta-stock" id="alerta-stock">⚠️ Stock enfriador bajo</div>
+  <div id="alerta-creditos-venc" style="display:none;background:rgba(255,68,68,.1);border:1.5px solid rgba(255,68,68,.3);margin:6px 14px 0;border-radius:10px;padding:8px 14px;font-size:12px;font-weight:700;color:var(--red);cursor:pointer" onclick="navTo('cartera')"></div>
+
+  <div id="banner-backup" style="display:none;background:rgba(240,165,0,.1);border:1.5px solid rgba(240,165,0,.4);margin:8px 14px 0;border-radius:10px;padding:10px 14px;align-items:center;justify-content:space-between;gap:8px">
+    <div style="font-size:12px;font-weight:700;color:var(--acc2)">💾 Han pasado 7 días sin copia de seguridad</div>
+    <div style="display:flex;gap:6px;flex-shrink:0">
+      <button onclick="hacerCopiaAhora()" style="background:var(--acc2);border:none;border-radius:8px;padding:6px 12px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:800;color:#000;cursor:pointer">Descargar</button>
+      <button onclick="posponerCopia()" style="background:transparent;border:1px solid var(--acc2);border-radius:8px;padding:6px 10px;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;color:var(--acc2);cursor:pointer">Después</button>
+    </div>
+  </div>
+
+  <!-- PANEL DE CUADRE DE INVENTARIO -->
+  <div id="panel-cuadre" style="display:none;background:rgba(255,193,7,.06);border:1.5px solid rgba(255,193,7,.3);margin:10px 14px 0;border-radius:10px;padding:10px 14px;font-size:12px;cursor:pointer" onclick="toggleCuadre()">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-weight:800;color:#ffc107">📊 Cuadre de inventario</div>
+      <div style="font-size:10px;color:var(--muted)" id="cuadre-estado">Toca para ver</div>
+    </div>
+    <div id="cuadre-detalle" style="display:none;margin-top:10px">
+      <div class="rrow"><span class="rl">Total compradas</span><span class="rv g" id="cuadre-compradas">0</span></div>
+      <div class="rrow"><span class="rl">Sacrificadas</span><span class="rv" style="color:#ff9800" id="cuadre-sacrificadas">0</span></div>
+      <div class="rrow"><span class="rl">Vendidas vivas</span><span class="rv y" id="cuadre-vend-vivas">0</span></div>
+      <div class="rrow"><span class="rl">Vendidas enfriador</span><span class="rv b" id="cuadre-vend-enf">0</span></div>
+      <div class="rrow"><span class="rl">Mermas/Muertes</span><span class="rv r" id="cuadre-mermas">0</span></div>
+      <div class="rrow" style="border-top:2px solid var(--border);margin-top:4px;padding-top:8px">
+        <span style="font-weight:800">Existencia galpon</span>
+        <span style="font-weight:900;color:var(--grn)" id="cuadre-galpon">0</span>
+      </div>
+      <div class="rrow">
+        <span style="font-weight:800">Enfriador antes del sacrificio</span>
+        <span style="font-weight:900;color:var(--cold)" id="cuadre-enf-antes">0</span>
+      </div>
+      <div class="rrow">
+        <span style="font-weight:800">Existencia enfriador actual</span>
+        <span style="font-weight:900;color:var(--cold)" id="cuadre-enf">0</span>
+      </div>
+      <div class="rrow" style="background:rgba(0,200,81,.08);border-radius:8px;padding:6px 8px;margin-top:4px">
+        <span style="font-weight:900;font-size:14px">Total disponible</span>
+        <span style="font-weight:900;font-size:18px;color:var(--grn)" id="cuadre-total">0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="sl">Aves galpon</div><div class="sv g" id="stat-vivas">0</div><div id="stat-precios-viva" style="font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5"></div></div>
+    <div class="stat"><div class="sl">Enfriador</div><div class="sv b" id="stat-enf">0</div><div id="stat-precios-enf" style="font-size:10px;color:var(--muted);margin-top:4px;line-height:1.5"></div></div>
+    <div class="stat" style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px;position:relative;overflow:hidden">
+      <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--red)"></div>
+      <div class="sl">Merma total</div>
+      <div class="sv r" id="stat-merma">0</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;font-weight:700"><span id="stat-merma-pct">0%</span> de lo comprado</div>
+    </div>
+    <div class="stat" style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px;position:relative;overflow:hidden">
+      <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--acc2)"></div>
+      <div class="sl">Costo por ave</div>
+      <div style="margin-top:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+          <span style="font-size:11px;color:var(--muted)">🐔 Viva</span>
+          <span style="font-size:16px;font-weight:900;color:var(--grn)" id="stat-costo-viva">-</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:11px;color:var(--muted)">❄️ Enfriador</span>
+          <span style="font-size:16px;font-weight:900;color:var(--cold)" id="stat-costo-enf-ave">-</span>
+        </div>
+      </div>
+    </div>
+    <div class="stat" style="grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:10px;background:transparent;border:none;padding:0">
+      <div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px;position:relative;overflow:hidden">
+        <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--acc2)"></div>
+        <div class="sl">Huevos disp.</div>
+        <div class="sv y" id="stat-huevos">0</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-weight:700"><span id="stat-canastas">0</span> canastas · <span id="stat-huevos-unid">0</span> unid.</div>
+      </div>
+      <div style="background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:14px;position:relative;overflow:hidden">
+        <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--pur)"></div>
+        <div class="sl">% Postura hoy</div>
+        <div class="sv p" id="stat-pct">-</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px;font-weight:700" id="stat-pct-desc">Sin registro</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div id="sidebar" style="position:fixed;left:-280px;top:0;bottom:0;width:280px;background:var(--s1);border-right:1px solid var(--border);z-index:9990;transition:left .3s;overflow-y:auto;padding-bottom:40px">
+    <div style="padding:20px 16px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+      <div style="font-size:28px">🐔</div>
+      <div>
+        <div style="font-size:16px;font-weight:900">GRANJA <span style="color:var(--acc)">KALER</span></div>
+        <div style="font-size:11px;color:var(--muted);font-weight:600" id="sidebar-user">—</div>
+      </div>
+    </div>
+    <div style="padding:12px 8px">
+      <div style="font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:8px 10px 4px">Principal</div>
+      <button class="menu-item on" onclick="navTo('ventas')">💰 <span>Ventas</span></button>
+      <button class="menu-item" onclick="navTo('compras')">🛒 <span>Compras</span></button>
+      <button class="menu-item" onclick="navTo('sacrificio')">🔪 <span>Sacrificio del día</span></button>
+      <button class="menu-item" onclick="navTo('postura')">🥚 <span>Postura</span></button>
+      <button class="menu-item" onclick="navTo('alimento')">🌽 <span>Alimento</span></button>
+      <button class="menu-item" onclick="navTo('merma')">💀 <span>Merma / Bajas</span></button>
+      <button class="menu-item" onclick="navTo('medicamentos')">💊 <span>Medicamentos</span></button>
+      <div style="font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:16px 10px 4px">Clientes</div>
+      <button class="menu-item" onclick="navTo('creditos')">💳 <span>Créditos</span></button>
+      <button class="menu-item" onclick="navTo('clientes')">👥 <span>Clientes</span></button>
+      <button class="menu-item" onclick="navTo('cartera')">💰 <span>Platas por recoger</span></button>
+      <button class="menu-item" onclick="navTo('asistencia')">📋 <span>Asistencia pelado</span></button>
+      <button class="menu-item" onclick="navTo('comisiones')">💵 <span>Mis comisiones</span></button>
+      <button class="menu-item" onclick="navTo('comparativo')">📈 <span>Comparativo semanal</span></button>
+      <button class="menu-item" onclick="navTo('entregas')">🤝 <span>Entregas</span></button>
+      <button class="menu-item" onclick="navTo('conductor')" id="menu-conductor-btn" style="display:none">🚚 <span>Mis viajes</span></button>
+      <div style="font-size:10px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:1px;padding:16px 10px 4px" id="menu-admin-section" style="display:none">Administración</div>
+      <button class="menu-item admin-menu" onclick="navTo('admin')" id="menu-admin-btn" style="display:none">📊 <span>Reportes</span></button>
+      <button class="menu-item admin-menu" onclick="navTo('caja')" id="menu-caja-btn" style="display:none">💵 <span>Caja diaria</span></button>
+      <button class="menu-item admin-menu" onclick="navTo('gastos')" id="menu-gastos-btn" style="display:none">📋 <span>Gastos generales</span></button>
+      <button class="menu-item admin-menu" onclick="navTo('cierre')" id="menu-cierre-btn" style="display:none">📊 <span>Cierre de caja</span></button>
+      <button class="menu-item admin-menu" onclick="navTo('rentabilidad')" id="menu-rent-btn" style="display:none">🏆 <span>Rentabilidad clientes</span></button>
+      <button class="menu-item admin-menu" onclick="navTo('utilidad')" id="menu-utilidad-btn" style="display:none">💰 <span>Utilidad por venta</span></button>
+      <button class="menu-item admin-menu" onclick="navTo('liquidacion')" id="menu-liq-btn" style="display:none">🤝 <span>Liquidar conductor</span></button>
+      <button class="menu-item admin-menu" onclick="navTo('config')" id="menu-config-btn" style="display:none">⚙️ <span>Configuración</span></button>
+      <div style="margin-top:20px;padding:0 10px">
+        <button onclick="cerrarSesion()" style="width:100%;background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.2);color:var(--red);border-radius:10px;padding:10px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;cursor:pointer">🚪 Cerrar sesión</button>
+      </div>
+    </div>
+  </div>
+  <div id="sidebar-overlay" onclick="closeSidebar()" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9989;display:none"></div>
+
+  <!-- PANEL PROYECCION Y COMPARATIVO -->
+  <div id="panel-proyeccion" style="display:none;background:rgba(79,195,247,.06);border:1.5px solid rgba(79,195,247,.3);margin:8px 14px 0;border-radius:10px;padding:10px 14px;font-size:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <div style="font-weight:800;color:var(--cold)">📈 Proyección</div>
+    </div>
+    <div id="proyeccion-contenido"></div>
+  </div>
+
+  </div><!-- fin panel-kpis -->
+
+  <!-- VENTAS -->
+  <div id="page-ventas" class="page on">
+
+    <!-- SELECTOR tipo de venta -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px 14px 0">
+      <button onclick="mostrarSeccionVenta('gallinas')" id="btn-sec-gallinas" style="background:linear-gradient(135deg,#0d2b1a,#111915);border:2px solid var(--grn);border-radius:18px;padding:20px 12px;cursor:pointer;transition:all .2s">
+        <div style="font-size:44px">🐓</div>
+        <div style="font-size:14px;font-weight:900;color:var(--grn);margin-top:6px">GALLINAS</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px" id="info-stock-gallinas">Cargando...</div>
+      </button>
+      <button onclick="mostrarSeccionVenta('huevos')" id="btn-sec-huevos" style="background:linear-gradient(135deg,#2b200a,#1a1608);border:2px solid var(--acc2);border-radius:18px;padding:20px 12px;cursor:pointer;transition:all .2s">
+        <div style="font-size:44px">🥚</div>
+        <div style="font-size:14px;font-weight:900;color:var(--acc2);margin-top:6px">HUEVOS</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px" id="info-stock-huevos2">Cargando...</div>
+      </button>
+    </div>
+
+    <!-- GALLINAS - fondo verde oscuro -->
+    <div id="seccion-gallinas" style="display:none">
+    <div class="card" style="background:linear-gradient(135deg,#0d2b1a,#111915);border-color:var(--grn);border-width:2px;margin-top:14px">
+      <div style="text-align:center;margin-bottom:14px">
+        <div style="font-size:56px">🐓</div>
+        <div style="font-size:18px;font-weight:900;color:var(--grn);letter-spacing:1px">VENTA DE GALLINAS</div>
+      </div>
+      <div class="tsel">
+        <button class="tb" id="tb-viva" onclick="setTipoVenta('viva')">
+          <span style="font-size:34px">🐓</span><span style="font-weight:800">Viva</span>
+        </button>
+        <button class="tb" id="tb-muerta" onclick="setTipoVenta('muerta')">
+          <span style="font-size:34px">🍗</span><span style="font-weight:800">Enfriador</span>
+        </button>
+      </div>
+      <div class="info" id="info-venta-gallina">Disponible: 0 aves</div>
+      <!-- Recuadro ultimas compras enfriador -->
+      <div id="vg-ref-compras" style="display:none;background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.2);border-radius:10px;padding:10px 12px;margin:6px 0;font-size:12px">
+        <div style="font-weight:800;color:var(--cold);margin-bottom:6px;font-size:11px">📦 ÚLTIMAS COMPRAS — REFERENCIA</div>
+        <div id="vg-ref-compras-lista"></div>
+      </div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="vg-fecha" onchange="detectarViajeHoy()"></div>
+        <div class="field"><label>Vendedor</label><input type="text" id="vg-usuario" list="lista-vendedores"></div>
+        <div class="field fc"><label>Cliente</label><input type="text" id="vg-cliente" placeholder="Nombre del cliente" oninput="this.value=this.value.toUpperCase();autoLlenarTelCliente('vg-cliente','vg-cliente-tel');mostrarInfoCliente('vg-cliente','vg-cliente-info');actualizarUtilidadVenta()" list="lista-clientes-credito"></div>
+        <div id="vg-cliente-info" style="display:none;background:rgba(206,147,216,.08);border:1px solid rgba(206,147,216,.2);border-radius:10px;padding:10px;font-size:12px;margin-top:-4px"></div>
+        <div class="field fc"><label>Teléfono cliente</label><input type="tel" id="vg-cliente-tel" placeholder="3001234567 (opcional)"></div>
+        <div class="field"><label>Cantidad</label><input type="number" min="1" id="vg-cantidad" placeholder="0"></div>
+        <div class="field"><label>Precio unitario</label><input type="number" id="vg-precio" placeholder="$0"></div>
+        <div class="field fc"><label>Monto total</label><input id="vg-monto" style="display:none"><div class="monto-display" id="vg-monto-fmt"></div></div>
+        <div class="field fc"><label>Nota</label><input type="text" id="vg-nota" placeholder="Observaciones..."></div>
+        <!-- Banner viaje conductor -->
+        <div id="vg-banner-viaje" style="display:none;background:rgba(255,152,0,.08);border:1.5px solid rgba(255,152,0,.3);border-radius:12px;padding:12px;margin-bottom:4px">
+          <div style="font-size:12px;font-weight:800;color:#ff9800;margin-bottom:6px">🚚 Viaje registrado hoy</div>
+          <div style="font-size:12px;color:var(--fg)" id="vg-banner-viaje-info"></div>
+          <button onclick="aplicarViajeAConductor()" style="margin-top:8px;width:100%;background:linear-gradient(135deg,#ff9800,#e65100);border:none;color:#000;font-weight:800;font-size:13px;padding:8px;border-radius:8px;cursor:pointer">⚡ Aplicar gastos a esta venta</button>
+        </div>
+        <div class="field"><label>🚚 Gasto transporte</label><input type="number" id="vg-transporte" placeholder="$0" oninput="actualizarUtilidadVenta()"></div>
+        <div class="field"><label>👨‍✈️ Pago conductor</label><input type="number" id="vg-conductor" placeholder="$0" oninput="actualizarUtilidadVenta()"></div>
+        <div class="field fc"><label>➕ Otros gastos venta</label><input type="number" id="vg-otros" placeholder="$0"></div>
+        <div class="field fc" id="vg-utilidad-box" style="background:rgba(0,200,81,.06);border:1px solid rgba(0,200,81,.2);border-radius:12px;padding:12px;display:none">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:8px">📊 Resumen esta venta</div>
+          <div id="vg-info-desglose-enf" style="display:none;background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.2);border-radius:8px;padding:8px;margin-bottom:8px">
+            <div style="font-size:10px;color:var(--cold);font-weight:800;text-transform:uppercase;margin-bottom:6px">🍗 Costo neto enfriador</div>
+            <div id="vg-ultimas-compras" style="margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid rgba(79,195,247,.15)"></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:11px;color:var(--muted)">Compra viva (prom)</span><span style="font-size:11px;font-weight:700;color:var(--cold)" id="vg-info-costo-compra">$0</span></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="font-size:11px;color:var(--muted)">Costo pelada</span><span style="font-size:11px;font-weight:700;color:var(--cold)" id="vg-info-costo-pelada">$0</span></div>
+            <div style="display:flex;justify-content:space-between;padding-top:4px;border-top:1px solid rgba(79,195,247,.2)"><span style="font-size:11px;font-weight:800">Total/ave</span><span style="font-size:12px;font-weight:900;color:var(--cold)" id="vg-info-costo-ave-enf">$0</span></div>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:var(--muted)">Costo por ave</span><span style="font-size:12px;font-weight:700;color:var(--cold)" id="vg-info-costo-ave">$0</span></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:var(--muted)">Costo aves (x cant.)</span><span style="font-size:12px;font-weight:700;color:var(--cold)" id="vg-info-costo-total">$0</span></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:var(--muted)">Transporte + conductor</span><span style="font-size:12px;font-weight:700;color:var(--red)" id="vg-info-gastos">$0</span></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px" id="vg-info-comision-row" style="display:none"><span style="font-size:12px;color:var(--pur)">💚 Comisión Jadis</span><span style="font-size:12px;font-weight:700;color:var(--pur)" id="vg-info-comision">$0</span></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:12px;color:var(--muted)">Precio venta</span><span style="font-size:12px;font-weight:700;color:var(--grn)" id="vg-info-venta">$0</span></div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)"><span style="font-size:14px;font-weight:800">Utilidad neta</span><span style="font-size:18px;font-weight:900" id="vg-info-utilidad">$0</span></div>
+        </div>
+      </div>
+      <div class="tsel" style="margin-top:10px">
+        <button class="tb on" id="vg-tipo-contado" onclick="setTipoPago('vg','contado')" style="border-color:var(--grn);background:rgba(0,200,81,.1);color:var(--grn)">
+          <span style="font-size:24px">💵</span><span>Contado</span>
+        </button>
+        <button class="tb" id="vg-tipo-credito" onclick="setTipoPago('vg','credito')">
+          <span style="font-size:24px">💳</span><span>A crédito</span>
+        </button>
+      </div>
+      <button class="btn bg" onclick="addVentaGallina()" style="font-size:16px;padding:16px">🐓 Registrar venta gallina</button>
+    </div>
+
+    </div><!-- end seccion-gallinas -->
+
+    <!-- HUEVOS - fondo amarillo oscuro -->
+    <div id="seccion-huevos" style="display:none">
+    <div class="card" style="background:linear-gradient(135deg,#2b200a,#1a1608);border-color:var(--acc2);border-width:2px">
+      <div style="text-align:center;margin-bottom:14px">
+        <div style="font-size:56px">🥚</div>
+        <div style="font-size:18px;font-weight:900;color:var(--acc2);letter-spacing:1px">VENTA DE HUEVOS</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        <div style="background:rgba(240,165,0,.1);border:1.5px solid rgba(240,165,0,.3);border-radius:12px;padding:12px;text-align:center">
+          <div class="sl">Disponibles</div>
+          <div style="font-size:28px;font-weight:900;color:var(--acc2)" id="stock-huevos-u">0</div>
+          <div style="font-size:11px;color:var(--muted);font-weight:600">unidades</div>
+        </div>
+        <div style="background:rgba(240,165,0,.1);border:1.5px solid rgba(240,165,0,.3);border-radius:12px;padding:12px;text-align:center">
+          <div class="sl">Canastas x30</div>
+          <div style="font-size:28px;font-weight:900;color:var(--acc2)" id="stock-huevos-c">0</div>
+          <div style="font-size:11px;color:var(--muted);font-weight:600">canastas</div>
+        </div>
+      </div>
+      <div class="tsel">
+        <button class="tb" id="tb-canasta" onclick="setTipoHuevo('canasta')">🧺 Canasta (30)</button>
+        <button class="tb" id="tb-suelto" onclick="setTipoHuevo('suelto')">🥚 Suelto</button>
+      </div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="vh-fecha"></div>
+        <div class="field"><label>Vendedor</label><input type="text" id="vh-usuario" list="lista-vendedores"></div>
+        <div class="field fc"><label>Cliente</label><input type="text" id="vh-cliente" placeholder="Nombre del cliente" oninput="this.value=this.value.toUpperCase();autoLlenarTelCliente('vh-cliente','vh-cliente-tel')" list="lista-clientes-credito"></div>
+        <div class="field fc"><label>Teléfono cliente</label><input type="tel" id="vh-cliente-tel" placeholder="3001234567 (opcional)"></div>
+        <div class="field fc"><label>Nota / Observación</label><input type="text" id="vh-nota" placeholder="Observaciones..."></div>
+        <div class="field"><label id="lbl-cant-huevo">Canastas</label><input type="number" min="1" id="vh-cantidad" placeholder="0"></div>
+        <div class="field"><label id="lbl-precio-huevo">Precio canasta</label><input type="number" id="vh-precio" placeholder="$0"></div>
+        <div class="field fc"><label>Monto total</label><input id="vh-monto" style="display:none"><div class="monto-display" id="vh-monto-fmt" style="color:var(--acc2)"></div></div>
+      </div>
+      <div class="tsel" style="margin-top:10px">
+        <button class="tb on" id="vh-tipo-contado" onclick="setTipoPago('vh','contado')" style="border-color:var(--acc2);background:rgba(240,165,0,.1);color:var(--acc2)">
+          <span style="font-size:24px">💵</span><span>Contado</span>
+        </button>
+        <button class="tb" id="vh-tipo-credito" onclick="setTipoPago('vh','credito')">
+          <span style="font-size:24px">💳</span><span>A crédito</span>
+        </button>
+      </div>
+      <button class="btn ba" onclick="addVentaHuevo()" style="font-size:16px;padding:16px">🥚 Registrar venta huevo</button>
+    </div>
+
+    </div><!-- end seccion-huevos -->
+
+    <!-- HISTORIAL SEPARADO -->
+    <div class="card">
+      <div class="ct">Historial de ventas</div>
+      <div class="filtro-row" id="filtro-ventas">
+        <button class="fbtn on" onclick="setFiltroVentas('hoy',this)">Hoy</button>
+        <button class="fbtn" onclick="setFiltroVentas('semana',this)">Semana</button>
+        <button class="fbtn" onclick="setFiltroVentas('mes',this)">Mes</button>
+        <button class="fbtn" onclick="setFiltroVentas('todo',this)">Todo</button>
+      </div>
+      <!-- Totales a entregar hoy -->
+      <div id="totales-vendedores" style="margin-bottom:10px"></div>
+      <!-- Gallinas -->
+      <div style="font-size:11px;font-weight:800;color:var(--grn);text-transform:uppercase;letter-spacing:1px;margin:10px 0 6px;display:flex;align-items:center;gap:6px">
+        <span>🐓</span> Gallinas — <span id="total-ventas-gallina" style="font-family:'JetBrains Mono',monospace">$0</span>
+      </div>
+      <div class="mlist" id="lista-ventas-gallina"></div>
+      <!-- Huevos -->
+      <div style="font-size:11px;font-weight:800;color:var(--acc2);text-transform:uppercase;letter-spacing:1px;margin:14px 0 6px;display:flex;align-items:center;gap:6px">
+        <span>🥚</span> Huevos — <span id="total-ventas-huevo" style="font-family:'JetBrains Mono',monospace">$0</span>
+      </div>
+      <div class="mlist" id="lista-ventas-huevo"></div>
+    </div>
+  </div>
+
+  <!-- COMPRAS -->
+  <div id="page-compras" class="page">
+    <div class="card">
+      <div class="ct">Compra gallinas vivas</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="cv-fecha"></div>
+        <div class="field"><label>Cantidad</label><input type="number" min="1" id="cv-cantidad" placeholder="0"></div>
+        <div class="field"><label>Precio unitario</label><input type="number" id="cv-precio" placeholder="$0"></div>
+        <div class="field"><label>Subtotal aves</label><input id="cv-monto" style="display:none"><div class="monto-display" id="cv-monto-fmt" style="font-size:18px"></div></div>
+        <div class="field"><label>🚚 Flete transporte</label><input type="number" id="cv-flete" placeholder="$0"></div>
+        <div class="field"><label>👷 Descargue</label><input type="number" id="cv-descargue" placeholder="$0"></div>
+        <div class="field"><label>🧾 Viáticos conductor</label><input type="number" id="cv-viaticos" placeholder="$0"></div>
+        <div class="field"><label>➕ Otros gastos</label><input type="number" id="cv-otros" placeholder="$0"></div>
+        <div class="field fc" style="background:rgba(0,200,81,.06);border:1px solid rgba(0,200,81,.2);border-radius:12px;padding:12px">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px">Costo real total</div>
+          <div style="font-size:28px;font-weight:900;color:var(--grn)" id="cv-costo-total">$0</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Costo por ave: <span style="color:var(--grn);font-weight:800" id="cv-costo-ave">$0</span></div>
+        </div>
+        <div class="field fc"><label>Proveedor</label><input type="text" id="cv-proveedor" placeholder="Nombre del proveedor..." oninput="this.value=this.value.toUpperCase()"></div>
+        <div class="field fc"><label>Nota</label><input type="text" id="cv-nota" placeholder="Observaciones..."></div>
+      </div>
+      <button class="btn bg" onclick="addCompraViva()">Registrar compra vivas</button>
+    </div>
+    <!-- Ajuste de inventario - solo admin -->
+    <div class="card" id="card-ajuste-inv" style="display:none;border-color:var(--acc2);border-width:2px">
+      <div class="ct" style="color:var(--acc2)">⚖️ Modificar inventario</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Corrige el inventario en caso de error. Queda registro de cada modificación.</div>
+
+      <!-- Stock actual -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+        <div style="background:rgba(0,200,81,.08);border:1px solid rgba(0,200,81,.2);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:var(--muted);font-weight:700">GALPON ACTUAL</div>
+          <div style="font-size:24px;font-weight:900;color:var(--grn)" id="ajuste-stock-galpon">0</div>
+        </div>
+        <div style="background:rgba(79,195,247,.08);border:1px solid rgba(79,195,247,.2);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:var(--muted);font-weight:700">ENFRIADOR ACTUAL</div>
+          <div style="font-size:24px;font-weight:900;color:var(--cold)" id="ajuste-stock-enf">0</div>
+        </div>
+      </div>
+
+      <div class="fg">
+        <div class="field fc"><label>¿Dónde modificar?</label>
+          <select id="ajuste-tipo" onchange="actualizarAjusteInfo()">
+            <option value="galpon">🐔 Galpon (aves vivas)</option>
+            <option value="enfriador">❄️ Enfriador (aves sacrificadas)</option>
+          </select>
+        </div>
+        <div class="field fc"><label>Nueva cantidad correcta</label>
+          <input type="number" id="ajuste-nueva-cantidad" placeholder="Ingresa la cantidad real" oninput="actualizarAjusteInfo()">
+        </div>
+        <div id="ajuste-diferencia-info" style="grid-column:1/-1;background:rgba(240,165,0,.08);border:1px solid rgba(240,165,0,.2);border-radius:10px;padding:10px;font-size:13px;display:none">
+          <div id="ajuste-diferencia-texto"></div>
+        </div>
+        <div class="field fc"><label>Motivo de la modificación</label>
+          <input type="text" id="ajuste-motivo" placeholder="Ej: Error al registrar sacrificio..." oninput="this.value=this.value.toUpperCase()">
+        </div>
+      </div>
+      <button class="btn" onclick="addAjusteInventario()" style="background:linear-gradient(135deg,var(--acc2),#e09000);color:#000;margin-top:10px">⚖️ Aplicar modificación</button>
+
+      <!-- Historial modificaciones -->
+      <div style="margin-top:14px">
+        <div style="font-size:11px;color:var(--acc2);font-weight:800;text-transform:uppercase;margin-bottom:8px">📋 Historial de modificaciones</div>
+        <div id="lista-modificaciones"><div class="loading">Cargando...</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct">Historial de compras</div>
+      <div class="mlist" id="lista-compras"><div class="loading">Cargando...</div></div>
+    </div>
+  </div>
+
+  <!-- POSTURA -->
+  <div id="page-postura" class="page">
+    <div class="card">
+      <div class="ct">Registro diario postura</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="pos-fecha"></div>
+        <div class="field"><label>Huevos recolectados</label><input type="number" min="0" id="pos-huevos" placeholder="0"></div>
+        <div class="field fc"><label>Registrado por</label><input type="text" id="pos-usuario" list="lista-vendedores"></div>
+      </div>
+      <button class="btn ba" onclick="addPostura()">Registrar postura</button>
+    </div>
+    <div class="card">
+      <div class="ct">Tabla de postura</div>
+      <div style="overflow-x:auto"><table class="ptable">
+        <thead><tr><th>Fecha / Hora</th><th>Huevos</th><th>% Postura</th><th>Por</th><th></th></tr></thead>
+        <tbody id="tabla-postura"><tr><td colspan="5" class="loading">Cargando...</td></tr></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- ALIMENTO -->
+  <div id="page-alimento" class="page">
+    <div class="card" style="background:linear-gradient(135deg,rgba(0,200,81,.08),rgba(0,160,64,.04));border-color:rgba(0,200,81,.2)">
+      <div class="ct">Costo del dia de hoy</div>
+      <div style="text-align:center;padding:8px 0">
+        <div style="font-size:44px;font-weight:900;color:var(--grn)" id="costo-hoy-val">$0</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;font-weight:600" id="costo-hoy-desc">Sin alimento registrado hoy</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ct">Registrar alimento de hoy</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="al-fecha"></div>
+        <div class="field"><label>Bultos echados</label><input type="number" min="0" step="0.5" id="al-bultos" placeholder="0" oninput="actualizarCostoAlim()"></div>
+        <div class="field fc"><label id="lbl-costo-alim">Costo: $0</label><input type="text" id="al-nota" placeholder="Observaciones..."></div>
+      </div>
+      <button class="btn ba" onclick="addAlimento()">Registrar alimento</button>
+    </div>
+    <div class="card">
+      <div class="ct">Historial alimento</div>
+      <div class="mlist" id="lista-alimento"><div class="loading">Cargando...</div></div>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div id="page-admin" class="page">
+    <div class="rg2">
+      <div class="card" style="margin:0">
+        <div class="ct y">Galpon</div>
+        <div class="rrow"><span class="rl">Compradas</span><span class="rv g" id="res-cv">0</span></div>
+        <div class="rrow"><span class="rl">Mortalidad</span><span class="rv r" id="res-mort">0</span></div>
+        <div class="rrow"><span class="rl">Sacrificadas</span><span class="rv r" id="res-sac">0</span></div>
+        <div class="rrow"><span class="rl">Mermas</span><span class="rv r" id="res-merma">0</span></div>
+        <div class="rrow"><span class="rl">Vendidas vivas</span><span class="rv y" id="res-vv">0</span></div>
+        <div class="rrow"><span class="rl">Existencia</span><span class="rv g" id="res-exist">0</span></div>
+      </div>
+      <div class="card" style="margin:0">
+        <div class="ct y">Enfriador</div>
+        <div class="rrow"><span class="rl">Compradas</span><span class="rv b" id="res-cm">0</span></div>
+        <div class="rrow"><span class="rl">+ Sacrificadas</span><span class="rv b" id="res-sac-enf">0</span></div>
+        <div class="rrow"><span class="rl">Vendidas</span><span class="rv y" id="res-vm">0</span></div>
+        <div class="rrow"><span class="rl">Stock</span><span class="rv b" id="res-stock">0</span></div>
+      </div>
+    </div>
+
+    <!-- PANEL DE VERIFICACION -->
+    <div class="card" style="border-color:var(--acc2);border-width:2px">
+      <div class="ct y">✅ Verificación de inventario</div>
+      <div id="panel-verificacion"></div>
+    </div>
+
+    <!-- GRAFICAS -->
+    <div class="card" style="background:linear-gradient(135deg,#0a1a0a,#0d200d);border-color:rgba(0,200,81,.3);border-width:1.5px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div>
+          <div class="ct y" style="margin:0;padding:0">📈 Ventas últimos 7 días</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px" id="grafica-total-semana">Calculando...</div>
+        </div>
+      </div>
+      <div id="grafica-ventas" style="display:flex;align-items:flex-end;gap:6px;height:120px;padding:0 4px"></div>
+      <div style="display:flex;gap:6px;margin-top:6px" id="grafica-labels"></div>
+    </div>
+
+    <div class="card">
+      <div class="ct y">Financiero</div>
+      <div class="filtro-row">
+        <button class="fbtn on" onclick="setFiltroAdmin('hoy',this)">Hoy</button>
+        <button class="fbtn" onclick="setFiltroAdmin('semana',this)">Semana</button>
+        <button class="fbtn" onclick="setFiltroAdmin('mes',this)">Mes</button>
+        <button class="fbtn" onclick="setFiltroAdmin('todo',this)">Todo</button>
+      </div>
+      <div class="rrow"><span class="rl">Venta gallina viva</span><span class="rv g" id="res-ingGV">-</span></div>
+      <div class="rrow"><span class="rl">Venta enfriador</span><span class="rv g" id="res-ingGM">-</span></div>
+      <div class="rrow"><span class="rl">Venta huevos</span><span class="rv g" id="res-ingH">-</span></div>
+      <div class="rrow"><span class="rl">Egreso aves vivas</span><span class="rv r" id="res-egrV">-</span></div>
+      <div class="rrow"><span class="rl">Egreso enfriador</span><span class="rv r" id="res-egrM">-</span></div>
+      <div class="rrow"><span class="rl">Egreso alimento</span><span class="rv r" id="res-egrAl">-</span></div>
+      <div class="rrow" style="margin-top:6px">
+        <span class="rl" style="font-weight:800;color:var(--text);font-size:15px">Balance neto</span>
+        <span class="rv" id="res-balance" style="font-size:20px">-</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct y">Ventas por persona</div>
+      <div id="res-personas"></div>
+    </div>
+
+    <div class="card">
+      <div class="ct y">Postura</div>
+      <div class="rrow"><span class="rl">Total recolectados</span><span class="rv y" id="res-prec">0</span></div>
+      <div class="rrow"><span class="rl">Total vendidos</span><span class="rv g" id="res-pvend">0</span></div>
+      <div class="rrow"><span class="rl">Promedio diario</span><span class="rv y" id="res-pprom">0</span></div>
+    </div>
+
+    <div class="card">
+      <div class="ct y">💰 Utilidad real por producto</div>
+      <div class="rrow"><span class="rl">Utilidad gallina viva</span><span class="rv g" id="res-util-gv">-</span></div>
+      <div class="rrow"><span class="rl">Utilidad enfriador</span><span class="rv g" id="res-util-gm">-</span></div>
+      <div class="rrow"><span class="rl">Gastos en ventas</span><span class="rv r" id="res-gastos-ventas">-</span></div>
+      <div class="rrow"><span class="rl">Costo promedio ave (viva)</span><span class="rv b" id="res-costo-ave-v">-</span></div>
+      <div class="rrow"><span class="rl">Costo promedio ave (enfriador)</span><span class="rv b" id="res-costo-ave-m">-</span></div>
+      <div class="rrow" style="margin-top:6px">
+        <span class="rl" style="font-weight:900;color:var(--text)">Utilidad neta total</span>
+        <span class="rv" id="res-util-neta" style="font-size:20px">-</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ct y">🔐 Cambiar clave admin</div>
+      <div class="fg">
+        <div class="field fc"><label>Clave actual</label><input type="password" id="clave-actual" placeholder="••••••"></div>
+        <div class="field fc"><label>Nueva clave</label><input type="password" id="clave-nueva" placeholder="••••••"></div>
+        <div class="field fc"><label>Confirmar nueva clave</label><input type="password" id="clave-confirm" placeholder="••••••"></div>
+      </div>
+      <button class="btn ba" onclick="cambiarClave()" style="margin-top:10px">🔐 Cambiar clave</button>
+    </div>
+
+    <div class="card">
+      <div class="ct y">🚚 Historial rutas y conductores</div>
+      <div class="filtro-row" id="filtro-rutas">
+        <button class="fbtn on" onclick="setFiltroRutas('semana',this)">Semana</button>
+        <button class="fbtn" onclick="setFiltroRutas('mes',this)">Mes</button>
+        <button class="fbtn" onclick="setFiltroRutas('todo',this)">Todo</button>
+      </div>
+      <div id="lista-rutas"><div class="loading">Cargando...</div></div>
+    </div>
+
+    <div class="card">
+      <div class="ct y">🗑️ Historial de eliminaciones</div>
+      <div id="lista-auditoria"><div class="loading">Cargando...</div></div>
+    </div>
+
+    <div class="card">
+      <div class="ct y">Exportar datos</div>
+      <div class="fg" style="margin-bottom:10px">
+        <div class="field"><label>Mes</label>
+          <select id="export-mes">
+            <option value="01">Enero</option><option value="02">Febrero</option>
+            <option value="03">Marzo</option><option value="04">Abril</option>
+            <option value="05">Mayo</option><option value="06">Junio</option>
+            <option value="07">Julio</option><option value="08">Agosto</option>
+            <option value="09">Septiembre</option><option value="10">Octubre</option>
+            <option value="11">Noviembre</option><option value="12">Diciembre</option>
+          </select>
+        </div>
+        <div class="field"><label>Año</label>
+          <select id="export-anio">
+            <option value="2024">2024</option>
+            <option value="2025">2025</option>
+            <option value="2026" selected>2026</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn ba" onclick="exportarPDF()" style="margin-top:0">📄 Generar PDF reporte</button>
+      <button class="btn" onclick="exportarExcel()" style="margin-top:8px;background:rgba(0,200,81,.15);border:1px solid var(--grn);color:var(--grn)">📥 Descargar Excel</button>
+    </div>
+  </div>
+
+  <!-- SACRIFICIO -->
+  <div id="page-sacrificio" class="page">
+
+    <!-- Registrar sacrificio -->
+    <div class="card" style="border-color:var(--pur);border-width:2px">
+      <div class="ct" style="color:var(--pur)">🔪 Registrar sacrificio del día</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="sac-fecha"></div>
+        <div class="field"><label>Cantidad gallinas</label><input type="number" min="1" id="sac-cantidad" placeholder="0" oninput="calcSacrificio()"></div>
+        <div class="field fc"><label>💀 Merma en sacrificio</label><input type="number" min="0" id="sac-merma" placeholder="0" oninput="calcSacrificio()"></div>
+        <div class="field fc"><label>☕ Gastos fijos (merienda, agua, café)</label><input type="number" id="sac-gastos-fijos" placeholder="35000" value="35000" oninput="calcSacrificio()"></div>
+      </div>
+
+      <!-- Personal -->
+      <div style="margin:14px 0 8px;font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase">👥 Personal que vino hoy</div>
+      <div id="lista-personal-sac" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px"></div>
+      <!-- Agregar persona nueva -->
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <input type="text" id="nuevo-personal-nombre" placeholder="Agregar persona..." style="flex:1;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px;color:var(--text);font-family:'Outfit',sans-serif;font-size:13px;outline:none" oninput="this.value=this.value.toUpperCase()">
+        <select id="nuevo-personal-tipo" style="background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px;color:var(--text);font-family:'Outfit',sans-serif;font-size:12px;outline:none">
+          <option value="normal">Normal</option>
+          <option value="antiguo">Antiguo</option>
+        </select>
+        <button onclick="agregarPersonalExtra()" style="background:var(--pur);border:none;border-radius:10px;padding:10px 14px;color:#fff;font-family:'Outfit',sans-serif;font-weight:800;cursor:pointer">+</button>
+      </div>
+
+      <!-- Resumen costo -->
+      <div id="sac-resumen" style="background:rgba(206,147,216,.06);border:1px solid rgba(206,147,216,.2);border-radius:12px;padding:14px;display:none">
+        <div style="font-size:11px;color:var(--pur);font-weight:800;text-transform:uppercase;margin-bottom:10px">📊 Costo del sacrificio</div>
+        <div class="rrow"><span class="rl">Mano de obra total</span><span class="rv" id="sac-total-mo" style="color:var(--pur)">$0</span></div>
+        <div class="rrow"><span class="rl">Gas (costo proporcional)</span><span class="rv" id="sac-total-gas" style="color:var(--acc2)">$0</span></div>
+        <div class="rrow"><span class="rl">Gastos fijos</span><span class="rv" id="sac-total-fijos" style="color:var(--muted)">$0</span></div>
+        <div class="rrow" style="border-top:2px solid var(--border);margin-top:6px;padding-top:10px">
+          <span style="font-weight:900;font-size:15px">Costo por gallina</span>
+          <span style="font-size:24px;font-weight:900;color:var(--pur)" id="sac-costo-ave">$0</span>
+        </div>
+        <div class="rrow"><span class="rl">Total a pagar</span><span class="rv g" id="sac-total-pagar">$0</span></div>
+      </div>
+
+      <!-- Detalle pago por persona -->
+      <div id="sac-detalle-personal" style="margin-top:12px"></div>
+
+      <!-- Todas van al enfriador automaticamente -->
+      <div style="background:rgba(79,195,247,.08);border:1px solid rgba(79,195,247,.2);border-radius:12px;padding:10px 14px;margin:10px 0;font-size:13px;font-weight:700;color:var(--cold)">
+        ❄️ Todas las gallinas sacrificadas van al enfriador automáticamente
+      </div>
+
+      <button class="btn bp" onclick="addSacrificio()" style="margin-top:14px">🔪 Registrar sacrificio</button>
+    </div>
+
+    <!-- Historial -->
+    <div class="card">
+      <div class="ct" style="color:var(--pur)">Historial sacrificios</div>
+      <div class="mlist" id="lista-sacrificios"><div class="loading">Cargando...</div></div>
+    </div>
+
+    <!-- Cilindro de gas -->
+    <div class="card" style="border-color:var(--acc2);border-width:2px">
+      <div class="ct y">🔥 Control cilindro de gas</div>
+      <div id="gas-status" style="text-align:center;padding:10px 0;margin-bottom:12px">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px">Gallinas disponibles en cilindro</div>
+        <div style="font-size:40px;font-weight:900;color:var(--acc2)" id="gas-disponible">-</div>
+        <div style="font-size:12px;color:var(--muted)" id="gas-desc">Sin cilindro registrado</div>
+      </div>
+      <div class="fg">
+        <div class="field"><label>Tipo cilindro</label>
+          <select id="gas-tipo">
+            <option value="40">40 kg (1.000 gallinas)</option>
+            <option value="100">100 kg (2.500 gallinas)</option>
+          </select>
+        </div>
+        <div class="field"><label>Precio cilindro</label><input type="number" id="gas-precio" placeholder="$0"></div>
+        <div class="field fc"><label>Fecha compra</label><input type="date" id="gas-fecha"></div>
+      </div>
+      <button class="btn ba" onclick="addCilindro()" style="margin-top:10px">🔥 Registrar cilindro nuevo</button>
+      <div id="lista-cilindros" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+
+  <!-- MERMA -->
+  <div id="page-merma" class="page">
+    <div class="card" style="border-color:var(--red);border-width:2px">
+      <div class="ct" style="color:var(--red)">💀 Merma / Bajas</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="merm-fecha"></div>
+        <div class="field"><label>Cantidad</label><input type="number" min="1" id="merm-cantidad" placeholder="0"></div>
+        <div class="field fc"><label>Origen</label>
+          <select id="merm-origen" onchange="actualizarTiposMerma()">
+            <option value="galpon">🐔 Galpon (ave viva)</option>
+            <option value="enfriador">❄️ Enfriador (ave sacrificada)</option>
+          </select>
+        </div>
+        <div class="field"><label>Causa</label>
+          <select id="merm-tipo">
+            <option>Muerte natural</option>
+            <option>Enfermedad</option>
+            <option>Accidente</option>
+            <option>Sacrificio por enfermedad</option>
+            <option>Otro</option>
+          </select>
+        </div>
+        <div class="field fc"><label>Descripción</label><input type="text" id="merm-nota" placeholder="Detalles..."></div>
+      </div>
+      <button class="btn br" onclick="addMerma()">💀 Registrar merma</button>
+    </div>
+    <div class="card">
+      <div class="ct" style="color:var(--red)">Resumen merma</div>
+      <div class="filtro-row" id="filtro-merma">
+        <button class="fbtn on" onclick="setFiltroMerma('semana',this)">Semana</button>
+        <button class="fbtn" onclick="setFiltroMerma('mes',this)">Mes</button>
+        <button class="fbtn" onclick="setFiltroMerma('todo',this)">Todo</button>
+      </div>
+      <div id="resumen-merma"></div>
+      <div class="mlist" id="lista-merma" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- MEDICAMENTOS -->
+  <div id="page-medicamentos" class="page">
+    <div class="card" style="border-color:rgba(233,30,99,.4);border-width:2px">
+      <div class="ct" style="color:#e91e63">💊 Registrar tratamiento</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="med-fecha"></div>
+        <div class="field fc"><label>Medicamento</label><input type="text" id="med-nombre" placeholder="Nombre del medicamento" oninput="this.value=this.value.toUpperCase()"></div>
+        <div class="field"><label>Dosis</label><input type="text" id="med-dosis" placeholder="Ej: 1ml/litro"></div>
+        <div class="field"><label>Aves tratadas</label><input type="number" id="med-aves" placeholder="0"></div>
+        <div class="field"><label>Costo ($)</label><input type="number" id="med-costo" placeholder="$0"></div>
+        <div class="field"><label>Días tratamiento</label><input type="number" id="med-dias" placeholder="1"></div>
+        <div class="field fc"><label>Motivo / Enfermedad</label><input type="text" id="med-motivo" placeholder="Motivo del tratamiento..."></div>
+      </div>
+      <button class="btn" onclick="addMedicamento()" style="background:linear-gradient(135deg,#e91e63,#c2185b);color:#fff;margin-top:10px">💊 Registrar</button>
+    </div>
+    <div class="card">
+      <div class="ct" style="color:#e91e63">Historial tratamientos</div>
+      <div id="lista-medicamentos"><div class="loading">Cargando...</div></div>
+    </div>
+  </div>
+
+  <!-- CONDUCTOR -->
+  <div id="page-conductor" class="page">
+    <div class="card" style="background:linear-gradient(135deg,#1a1200,#0f0c00);border-color:#ff9800;border-width:2px">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:48px">🚚</div>
+        <div style="font-size:18px;font-weight:900;color:#ff9800" id="conductor-nombre-hdr">CONDUCTOR</div>
+      </div>
+      <!-- Base recibida -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div style="background:rgba(255,152,0,.1);border:1px solid rgba(255,152,0,.3);border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px">Base recibida</div>
+          <div style="font-size:20px;font-weight:900;color:#ff9800;word-break:break-all" id="cond-stat-base">$0</div>
+        </div>
+        <div style="background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.3);border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px">Total gastos</div>
+          <div style="font-size:20px;font-weight:900;color:var(--red);word-break:break-all" id="cond-stat-gastos">$0</div>
+        </div>
+      </div>
+      <div style="background:rgba(0,200,81,.1);border:1px solid rgba(0,200,81,.3);border-radius:14px;padding:16px;text-align:center;margin-bottom:16px">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:6px">Saldo disponible</div>
+        <div style="font-size:32px;font-weight:900;color:var(--grn)" id="cond-stat-saldo">$0</div>
+      </div>
+    </div>
+
+    <!-- Registrar viaje -->
+    <div class="card" style="border-color:#ff9800;border-width:2px">
+      <div class="ct" style="color:#ff9800">📍 Registrar viaje</div>
+      <!-- Selector tipo -->
+      <div class="tsel" style="margin-bottom:14px">
+        <button class="tb on" id="cond-tipo-gallinas" onclick="setTipoViaje('gallinas')" style="border-color:#ff9800;background:rgba(255,152,0,.1);color:#ff9800">
+          <span style="font-size:20px">🐔</span><span>Con gallinas</span>
+        </button>
+        <button class="tb" id="cond-tipo-general" onclick="setTipoViaje('general')">
+          <span style="font-size:20px">📦</span><span>Viaje general</span>
+        </button>
+      </div>
+
+      <!-- Formulario viaje con gallinas -->
+      <div id="cond-form-gallinas">
+        <div class="fg">
+          <div class="field"><label>Fecha</label><input type="date" id="cond-fecha"></div>
+          <div class="field"><label>Base recibida</label><input type="number" id="cond-base" placeholder="$0" oninput="calcSaldoConductor()"></div>
+          <div class="field fc"><label>Ruta</label>
+            <select id="cond-ruta" onchange="setRutaConductor()">
+              <option value="">Seleccionar ruta...</option>
+              <option value="otra|0">Otra ruta...</option>
+            </select>
+          </div>
+          <div class="field fc" id="cond-otra-wrap" style="display:none">
+            <label>Nombre ruta</label><input type="text" id="cond-otra-ruta" placeholder="Nombre de la ruta">
+          </div>
+          <div class="field"><label>Tarifa ruta</label><input type="number" id="cond-tarifa" placeholder="$0" oninput="calcSaldoConductor()"></div>
+          <div class="field"><label>Peajes</label><input type="number" id="cond-peajes" placeholder="20000" value="20000" oninput="calcSaldoConductor()"></div>
+          <div class="field"><label>Comida</label><input type="number" id="cond-acpm" placeholder="$0" oninput="calcSaldoConductor()"></div>
+          <div class="field"><label>Combustible</label><input type="number" id="cond-combustible" placeholder="$0" oninput="calcSaldoConductor()"></div>
+          <div class="field"><label>Otros gastos del viaje</label><input type="number" id="cond-otros" placeholder="$0" oninput="calcSaldoConductor()"></div>
+          <div class="field"><label>💼 Gastos personales (no del viaje)</label><input type="number" id="cond-gastos-personales" placeholder="$0" oninput="calcSaldoConductor()"></div>
+          <div class="field fc"><label>Nota</label><input type="text" id="cond-nota" placeholder="Observaciones..."></div>
+        </div>
+
+        <!-- Dinero recibido de clientes -->
+        <div style="background:rgba(0,200,81,.06);border:1.5px solid rgba(0,200,81,.2);border-radius:12px;padding:12px;margin:10px 0">
+          <div style="font-size:12px;font-weight:800;color:var(--grn);margin-bottom:10px">💵 Dinero recibido de clientes</div>
+          <div id="cond-pagos-lista" style="margin-bottom:10px"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:6px;align-items:end">
+            <div><label style="font-size:10px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px">CLIENTE</label>
+              <input type="text" id="cond-pago-cliente" placeholder="Nombre" oninput="this.value=this.value.toUpperCase()" list="lista-clientes-credito" style="width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px;color:var(--fg);font-size:13px">
+            </div>
+            <div><label style="font-size:10px;color:var(--muted);font-weight:700;display:block;margin-bottom:4px">MONTO</label>
+              <input type="number" id="cond-pago-monto" placeholder="$0" style="width:100%;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:8px;color:var(--fg);font-size:13px">
+            </div>
+            <button onclick="agregarPagoConductor()" style="background:var(--grn);border:none;color:#000;font-weight:800;padding:8px 12px;border-radius:8px;cursor:pointer;font-size:18px">+</button>
+          </div>
+        </div>
+        <!-- Resumen -->
+        <div id="cond-resumen" style="background:rgba(255,152,0,.06);border:1px solid rgba(255,152,0,.2);border-radius:12px;padding:12px;margin:10px 0">
+          <div class="rrow"><span class="rl">Tarifa ruta</span><span class="rv" style="color:#ff9800" id="cond-r-tarifa">$0</span></div>
+          <div class="rrow"><span class="rl">Peajes</span><span class="rv r" id="cond-r-peajes">$0</span></div>
+          <div class="rrow"><span class="rl">Comida</span><span class="rv r" id="cond-r-acpm">$0</span></div>
+          <div class="rrow"><span class="rl">Combustible</span><span class="rv r" id="cond-r-comb">$0</span></div>
+          <div class="rrow"><span class="rl">Otros viaje</span><span class="rv r" id="cond-r-otros">$0</span></div>
+          <div class="rrow"><span class="rl" style="color:var(--muted)">💼 Gastos personales</span><span class="rv r" id="cond-r-personales">$0</span></div>
+          <div class="rrow"><span class="rl" style="color:var(--grn)">💵 Dinero recibido</span><span class="rv" style="color:var(--grn)" id="cond-r-recibido">$0</span></div>
+          <div class="rrow" style="border-top:2px solid var(--border);margin-top:4px;padding-top:8px">
+            <span style="font-weight:900">Total gastos viaje</span>
+            <span style="font-size:18px;font-weight:900;color:var(--red)" id="cond-r-total">$0</span>
+          </div>
+          <div class="rrow">
+            <span style="font-weight:900">Me deben pagar</span>
+            <span style="font-size:20px;font-weight:900;color:var(--grn)" id="cond-r-pagar">$0</span>
+          </div>
+          <div class="rrow">
+            <span style="font-weight:900">Debe entregar</span>
+            <span style="font-size:16px;font-weight:900" id="cond-r-saldo">$0</span>
+          </div>
+        </div>
+        <button class="btn" onclick="addViajeCondutor()" style="background:linear-gradient(135deg,#ff9800,#e65100);color:#000;font-size:16px;padding:16px">🚚 Registrar viaje con gallinas</button>
+      </div>
+
+      <!-- Formulario viaje general -->
+      <div id="cond-form-general" style="display:none">
+        <div style="background:rgba(79,195,247,.06);border:1px solid rgba(79,195,247,.2);border-radius:10px;padding:10px;margin-bottom:12px;font-size:12px;color:var(--muted)">
+          📦 Estos gastos NO afectan el costo de ninguna venta. Solo quedan para liquidación.
+        </div>
+        <div class="fg">
+          <div class="field"><label>Fecha</label><input type="date" id="cond-gen-fecha"></div>
+          <div class="field"><label>Base recibida</label><input type="number" id="cond-gen-base" placeholder="$0"></div>
+          <div class="field fc"><label>Descripción del viaje</label><input type="text" id="cond-gen-descripcion" placeholder="Ej: Compra repuestos, mandado..."></div>
+          <div class="field"><label>Peajes</label><input type="number" id="cond-gen-peajes" placeholder="$0"></div>
+          <div class="field"><label>Combustible</label><input type="number" id="cond-gen-combustible" placeholder="$0"></div>
+          <div class="field"><label>Comida</label><input type="number" id="cond-gen-comida" placeholder="$0"></div>
+          <div class="field"><label>Otros gastos</label><input type="number" id="cond-gen-otros" placeholder="$0"></div>
+        </div>
+        <button class="btn" onclick="addViajeGeneral()" style="background:linear-gradient(135deg,#4fc3f7,#0288d1);color:#000;font-size:16px;padding:16px">📦 Registrar viaje general</button>
+      </div>
+    </div>
+
+    <!-- Historial -->
+    <div class="card">
+      <div class="ct" style="color:#ff9800">Mis viajes</div>
+      <div class="mlist" id="lista-viajes-conductor"></div>
+    </div>
+  </div>
+
+  <!-- UTILIDAD POR VENTA -->
+  <div id="page-utilidad" class="page">
+    <div class="card" style="background:linear-gradient(135deg,#0a1f0a,#0d2b0d);border-color:var(--grn);border-width:2px">
+      <div class="ct">💰 Resumen de utilidad</div>
+      <div class="filtro-row" id="filtro-utilidad">
+        <button class="fbtn on" onclick="setFiltroUtilidad('hoy',this)">Hoy</button>
+        <button class="fbtn" onclick="setFiltroUtilidad('semana',this)">Semana</button>
+        <button class="fbtn" onclick="setFiltroUtilidad('mes',this)">Mes</button>
+        <button class="fbtn" onclick="setFiltroUtilidad('todo',this)">Todo</button>
+      </div>
+      <div id="utilidad-resumen"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+        <button onclick="exportarUtilidadExcel()" style="background:rgba(0,200,81,.15);border:1px solid var(--grn);color:var(--grn);border-radius:12px;padding:10px;font-family:'Outfit',sans-serif;font-weight:800;cursor:pointer">📥 Excel</button>
+        <button onclick="exportarUtilidadPDF()" style="background:rgba(255,68,68,.15);border:1px solid var(--red);color:var(--red);border-radius:12px;padding:10px;font-family:'Outfit',sans-serif;font-weight:800;cursor:pointer">📄 PDF</button>
+      </div>
+    </div>
+
+    <!-- Comparativo semanal -->
+    <div class="card">
+      <div class="ct">📊 Esta semana vs semana anterior</div>
+      <div id="comparativo-semanal"></div>
+    </div>
+
+    <!-- Utilidad por día -->
+    <div class="card">
+      <div class="ct">📅 Utilidad neta por día</div>
+      <div id="utilidad-diaria"></div>
+    </div>
+
+    <div class="card">
+      <div class="ct">Detalle por venta</div>
+      <div id="utilidad-lista"></div>
+    </div>
+
+    <!-- Resumen mensual -->
+    <div class="card" style="border-color:var(--cold);border-width:2px">
+      <div class="ct" style="color:var(--cold)">📅 Resumen mensual</div>
+      <div id="resumen-mensual"></div>
+    </div>
+
+    <!-- Ranking de dias -->
+    <div class="card" style="border-color:var(--acc2);border-width:2px">
+      <div class="ct" style="color:var(--acc2)">🏆 Mejores días de la semana</div>
+      <div id="ranking-dias"></div>
+    </div>
+  </div>
+
+  <!-- LIQUIDACION CONDUCTOR -->
+  <div id="page-liquidacion" class="page">
+    <div class="card" style="border-color:#ff9800;border-width:2px">
+      <div class="ct" style="color:#ff9800">🤝 Liquidar conductor</div>
+      <div class="fg">
+        <div class="field fc"><label>Conductor</label>
+          <select id="liq-conductor">
+            <option value="DARIO VERGARA">Dario Vergara</option>
+            <option value="ELIOTH HOYOS">Elioth Hoyos</option>
+          </select>
+        </div>
+        <div class="field"><label>Desde</label><input type="date" id="liq-desde"></div>
+        <div class="field"><label>Hasta</label><input type="date" id="liq-hasta"></div>
+      </div>
+      <button class="btn" onclick="calcLiquidacion()" style="background:linear-gradient(135deg,#ff9800,#e65100);color:#000;margin-top:10px">📊 Calcular liquidación</button>
+    </div>
+    <div id="liq-resumen"></div>
+    <div id="liq-viajes"></div>
+
+    <!-- Liquidacion Jadis -->
+    <div class="card" style="border-color:var(--acc);border-width:2px;margin-top:12px">
+      <div class="ct">💚 Comisiones Jadis</div>
+      <div class="fg">
+        <div class="field"><label>Desde</label><input type="date" id="jad-desde"></div>
+        <div class="field"><label>Hasta</label><input type="date" id="jad-hasta"></div>
+      </div>
+      <button class="btn bg" onclick="calcComisionJadis()" style="margin-top:10px">📊 Calcular comisiones</button>
+      <div id="jadis-resumen" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  </div>
+
+  <!-- CONFIGURACION -->
+  <div id="page-config" class="page">
+    <div class="card" style="border-color:var(--acc2);border-width:2px">
+      <div class="ct y">⚙️ Alimento</div>
+      <div class="fg">
+        <div class="field fc"><label>Precio bulto alimento ($)</label><input type="number" id="cfg-bulto-precio" placeholder="77500"></div>
+        <div class="field fc"><label>Kg por bulto</label><input type="number" id="cfg-bulto-kg" placeholder="40"></div>
+      </div>
+    </div>
+    <div class="card" style="border-color:var(--acc2);border-width:2px">
+      <div class="ct y">⚙️ Huevos</div>
+      <div class="fg">
+        <div class="field fc"><label>Huevos por canasta</label><input type="number" id="cfg-huevos-canasta" placeholder="30"></div>
+      </div>
+    </div>
+    <div class="card" style="border-color:var(--acc2);border-width:2px">
+      <div class="ct y">⚙️ Sacrificio</div>
+      <div class="fg">
+        <div class="field fc"><label>Precio pelada por ave ($)</label><input type="number" id="cfg-precio-pelada" placeholder="1000"></div>
+        <div class="field fc"><label>Bono trabajador antiguo ($)</label><input type="number" id="cfg-extra-antiguo" placeholder="10000"></div>
+        <div class="field fc"><label>Desayuno por persona ($)</label><input type="number" id="cfg-desayuno" placeholder="8000"></div>
+        <div class="field"><label>Capacidad cilindro 40kg (aves)</label><input type="number" id="cfg-cap-40" placeholder="1000"></div>
+        <div class="field"><label>Capacidad cilindro 100kg (aves)</label><input type="number" id="cfg-cap-100" placeholder="2500"></div>
+      </div>
+    </div>
+    <div class="card" style="border-color:var(--acc2);border-width:2px">
+      <div class="ct y">⚙️ Conductor</div>
+      <div class="fg">
+        <div class="field fc"><label>Peaje base ($)</label><input type="number" id="cfg-peaje-base" placeholder="20000"></div>
+      </div>
+    </div>
+    <div class="card" style="border-color:var(--acc2);border-width:2px">
+      <div class="ct y">⚙️ Alertas</div>
+      <div class="fg">
+        <div class="field fc"><label>Alerta stock minimo (aves)</label><input type="number" id="cfg-alerta-stock" placeholder="20"></div>
+      </div>
+    </div>
+    <div class="card" style="border-color:var(--pur);border-width:2px">
+      <div class="ct" style="color:var(--pur)">⚙️ Clientes con comisión especial</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Estos clientes generan comisión automática para Jadis y transporte fijo.</div>
+      <div id="cfg-clientes-esp-lista" style="margin-bottom:12px"></div>
+      <div class="fg">
+        <div class="field fc"><label>Nombre cliente</label><input type="text" id="cfg-esp-nombre" placeholder="NOMBRE" oninput="this.value=this.value.toUpperCase()"></div>
+        <div class="field"><label>Comisión/ave ($)</label><input type="number" id="cfg-esp-comision" placeholder="500"></div>
+        <div class="field"><label>Transporte fijo ($)</label><input type="number" id="cfg-esp-transporte" placeholder="20000"></div>
+      </div>
+      <button class="btn bp" onclick="agregarClienteEsp()" style="margin-top:10px">➕ Agregar cliente</button>
+    </div>
+    <div class="card" style="border-color:#ff9800;border-width:2px">
+      <div class="ct" style="color:#ff9800">⚙️ Rutas del conductor</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px">Al guardar, el select del conductor se actualiza automáticamente.</div>
+      <div id="cfg-rutas-lista" style="margin-bottom:12px"></div>
+      <div class="fg">
+        <div class="field fc"><label>Nombre ruta</label><input type="text" id="cfg-ruta-nombre" placeholder="Ej: Montería"></div>
+        <div class="field fc"><label>Tarifa ($)</label><input type="number" id="cfg-ruta-tarifa" placeholder="120000"></div>
+      </div>
+      <button class="btn" onclick="agregarRuta()" style="background:linear-gradient(135deg,#ff9800,#e65100);color:#000;margin-top:10px">➕ Agregar ruta</button>
+    </div>
+    <button class="btn ba" onclick="guardarConfig()" style="margin:12px 0">💾 Guardar configuración</button>
+  </div>
+
+  <!-- ENTREGAS VENDEDORES -->
+  <div id="page-entregas" class="page">
+    <div class="card" style="border-color:var(--grn);border-width:2px">
+      <div class="ct">💵 Entregas de vendedores</div>
+      <div id="entregas-resumen" style="margin-bottom:12px"></div>
+      <div class="fg">
+        <div class="field fc"><label>Vendedor</label>
+          <select id="ent-vendedor">
+            <option value="Jadis">Jadis</option>
+            <option value="Kener">Kener</option>
+          </select>
+        </div>
+        <div class="field"><label>Fecha</label><input type="date" id="ent-fecha"></div>
+        <div class="field"><label>Monto entregado</label><input type="number" id="ent-monto" placeholder="$0"></div>
+        <div class="field fc"><label>Nota</label><input type="text" id="ent-nota" placeholder="Observaciones..."></div>
+      </div>
+      <button class="btn bg" onclick="addEntrega()">✅ Registrar entrega</button>
+      <div style="margin-top:12px">
+        <div class="filtro-row" id="filtro-entregas-hist">
+          <button class="fbtn on" onclick="setFiltroEntregas('hoy',this)">Hoy</button>
+          <button class="fbtn" onclick="setFiltroEntregas('semana',this)">Semana</button>
+          <button class="fbtn" onclick="setFiltroEntregas('mes',this)">Mes</button>
+        </div>
+      </div>
+      <div class="mlist" id="lista-entregas" style="margin-top:8px"></div>
+    </div>
+  </div>
+
+  <!-- CAJA DIARIA -->
+  <div id="page-caja" class="page">
+    <div class="card" style="background:linear-gradient(135deg,#0a1f0a,#0d2b0d);border-color:var(--grn);border-width:2px">
+      <div class="ct">💵 Caja del día</div>
+      <!-- Fila 1: Entradas y Salidas -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div style="background:rgba(0,200,81,.1);border:1px solid rgba(0,200,81,.3);border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px">Entradas</div>
+          <div style="font-size:18px;font-weight:900;color:var(--grn)" id="caja-entradas">$0</div>
+        </div>
+        <div style="background:rgba(255,68,68,.1);border:1px solid rgba(255,68,68,.3);border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px">Salidas</div>
+          <div style="font-size:18px;font-weight:900;color:var(--red)" id="caja-salidas">$0</div>
+        </div>
+      </div>
+      <!-- Fila 2: Abonos cobrados y Balance -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div style="background:rgba(206,147,216,.1);border:1px solid rgba(206,147,216,.3);border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px">Abonos cobrados</div>
+          <div style="font-size:18px;font-weight:900;color:var(--pur)" id="caja-abonos">$0</div>
+        </div>
+        <div style="background:rgba(0,200,81,.08);border:2px solid rgba(0,200,81,.4);border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:4px">Balance</div>
+          <div style="font-size:18px;font-weight:900" id="caja-balance">$0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Registrar movimiento caja -->
+    <div class="card">
+      <div class="ct">Registrar movimiento</div>
+      <div class="tsel">
+        <button class="tb on" id="caja-tb-entrada" onclick="setCajaTipo('entrada')" style="border-color:var(--grn);background:rgba(0,200,81,.1);color:var(--grn)">
+          <span style="font-size:24px">⬆️</span><span>Entrada</span>
+        </button>
+        <button class="tb" id="caja-tb-salida" onclick="setCajaTipo('salida')">
+          <span style="font-size:24px">⬇️</span><span>Salida</span>
+        </button>
+      </div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="caja-fecha"></div>
+        <div class="field"><label>Monto</label><input type="number" id="caja-monto" placeholder="$0"></div>
+        <div class="field fc"><label>Concepto</label><input type="text" id="caja-concepto" placeholder="Descripción..."></div>
+        <div class="field fc"><label>Categoría</label>
+          <select id="caja-categoria">
+            <option value="Ventas">Ventas</option>
+            <option value="Compras">Compras</option>
+            <option value="Nómina">Nómina</option>
+            <option value="Transporte">Transporte</option>
+            <option value="Servicios">Servicios</option>
+            <option value="Alimento">Alimento</option>
+            <option value="Otros">Otros</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn bg" onclick="addMovCaja()">💵 Registrar</button>
+    </div>
+
+    <!-- Historial caja -->
+    <div class="card">
+      <div class="ct">Historial caja</div>
+      <div class="filtro-row" id="filtro-caja">
+        <button class="fbtn on" onclick="setFiltroCaja('hoy',this)">Hoy</button>
+        <button class="fbtn" onclick="setFiltroCaja('semana',this)">Semana</button>
+        <button class="fbtn" onclick="setFiltroCaja('mes',this)">Mes</button>
+      </div>
+      <div id="lista-caja"></div>
+    </div>
+  </div>
+
+  <!-- GASTOS GENERALES -->
+  <div id="page-gastos" class="page">
+    <div class="card" style="border-color:var(--red);border-width:2px">
+      <div class="ct" style="color:var(--red)">📋 Gastos generales</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="gast-fecha"></div>
+        <div class="field"><label>Monto</label><input type="number" id="gast-monto" placeholder="$0"></div>
+        <div class="field fc"><label>Categoría</label>
+          <select id="gast-categoria">
+            <option value="Combustible ACPM">Combustible ACPM</option>
+            <option value="Arriendo">Arriendo</option>
+            <option value="Agua">Agua</option>
+            <option value="Luz">Luz</option>
+            <option value="Gas">Gas</option>
+            <option value="Gasolina">Gasolina</option>
+            <option value="Internet">Internet</option>
+            <option value="Veterinario">Veterinario</option>
+            <option value="Medicamentos">Medicamentos</option>
+            <option value="Mantenimiento">Mantenimiento</option>
+            <option value="Papelería">Papelería</option>
+            <option value="Otros">Otros</option>
+          </select>
+        </div>
+        <div class="field fc"><label>Descripción</label><input type="text" id="gast-desc" placeholder="Detalles..."></div>
+      </div>
+      <button class="btn br" onclick="addGasto()">📋 Registrar gasto</button>
+    </div>
+
+    <!-- Resumen gastos -->
+    <div class="card">
+      <div class="ct" style="color:var(--red)">Resumen gastos</div>
+      <div class="filtro-row" id="filtro-gastos">
+        <button class="fbtn on" onclick="setFiltroGastos('mes',this)">Mes</button>
+        <button class="fbtn" onclick="setFiltroGastos('semana',this)">Semana</button>
+        <button class="fbtn" onclick="setFiltroGastos('todo',this)">Todo</button>
+      </div>
+      <div id="resumen-gastos"></div>
+      <div id="lista-gastos" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <!-- COMISIONES -->
+  <div id="page-comisiones" class="page">
+    <div class="card" style="background:linear-gradient(135deg,#0a1f0a,#0d2b0d);border-color:var(--grn);border-width:2px">
+      <div style="text-align:center;margin-bottom:12px">
+        <div style="font-size:48px">💵</div>
+        <div style="font-size:18px;font-weight:900;color:var(--grn)">MIS COMISIONES</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Ganancias por ventas especiales</div>
+      </div>
+    </div>
+    <div id="comisiones-contenido" style="padding:0 0 20px"></div>
+  </div>
+
+  <!-- ASISTENCIA PELADO -->
+  <div id="page-asistencia" class="page">
+    <div class="card" style="background:linear-gradient(135deg,#0a1a0a,#0d2b0d);border-color:var(--grn);border-width:2px">
+      <div style="text-align:center;margin-bottom:12px">
+        <div style="font-size:48px">📋</div>
+        <div style="font-size:18px;font-weight:900;color:var(--grn)">ASISTENCIA PELADO</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Por sacrificio y resumen semanal</div>
+      </div>
+    </div>
+    <div class="filtro-row" style="margin:8px 14px" id="filtro-asistencia">
+      <button class="fbtn on" onclick="setFiltroAsistencia('semana',this)">Semana</button>
+      <button class="fbtn" onclick="setFiltroAsistencia('mes',this)">Mes</button>
+      <button class="fbtn" onclick="setFiltroAsistencia('todo',this)">Todo</button>
+    </div>
+    <div id="asistencia-contenido" style="padding:0 14px 20px"></div>
+  </div>
+
+  <!-- RENTABILIDAD CLIENTES -->
+  <div id="page-rentabilidad" class="page">
+    <div class="card" style="background:linear-gradient(135deg,#1a0a2b,#200d40);border-color:var(--pur);border-width:2px">
+      <div style="text-align:center;margin-bottom:12px">
+        <div style="font-size:48px">🏆</div>
+        <div style="font-size:18px;font-weight:900;color:var(--pur)">RENTABILIDAD POR CLIENTE</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Quién deja más utilidad neta</div>
+      </div>
+    </div>
+    <div class="filtro-row" style="margin:8px 14px" id="filtro-rent">
+      <button class="fbtn on" onclick="setFiltroRent('mes',this)">Mes</button>
+      <button class="fbtn" onclick="setFiltroRent('semana',this)">Semana</button>
+      <button class="fbtn" onclick="setFiltroRent('todo',this)">Todo</button>
+    </div>
+    <div style="padding:0 14px 8px">
+      <button onclick="exportarRentabilidadExcel()" style="width:100%;background:rgba(206,147,216,.15);border:1px solid var(--pur);color:var(--pur);border-radius:12px;padding:10px;font-family:'Outfit',sans-serif;font-weight:800;cursor:pointer">📥 Exportar Excel</button>
+    </div>
+    <div id="lista-rentabilidad" style="padding:0 14px"></div>
+  </div>
+
+  <!-- COMPARATIVO SEMANAL -->
+  <div id="page-comparativo" class="page">
+    <div class="card" style="background:linear-gradient(135deg,#0a1a2b,#0d2040);border-color:var(--cold);border-width:2px">
+      <div style="text-align:center;margin-bottom:12px">
+        <div style="font-size:48px">📈</div>
+        <div style="font-size:18px;font-weight:900;color:var(--cold)">COMPARATIVO SEMANAL</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Esta semana vs semana anterior</div>
+      </div>
+    </div>
+    <div id="comparativo-contenido" style="padding:0 0 20px"></div>
+  </div>
+
+  <!-- PLATAS POR RECOGER -->
+  <div id="page-cartera" class="page">
+    <div class="card" style="background:linear-gradient(135deg,#1a0f00,#2b1a00);border-color:var(--acc2);border-width:2px">
+      <div style="text-align:center;margin-bottom:12px">
+        <div style="font-size:48px">💰</div>
+        <div style="font-size:18px;font-weight:900;color:var(--acc2)">PLATAS POR RECOGER</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">Ventas de gallinas a crédito pendientes</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div style="background:rgba(255,68,68,.08);border:1px solid rgba(255,68,68,.2);border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:var(--muted);font-weight:700">TOTAL PENDIENTE</div>
+          <div style="font-size:22px;font-weight:900;color:var(--red)" id="cart-total-pendiente">$0</div>
+        </div>
+        <div style="background:rgba(240,165,0,.08);border:1px solid rgba(240,165,0,.2);border-radius:12px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:var(--muted);font-weight:700">CLIENTES</div>
+          <div style="font-size:22px;font-weight:900;color:var(--acc2)" id="cart-total-clientes">0</div>
+        </div>
+      </div>
+    </div>
+    <div class="filtro-row" id="filtro-cartera" style="margin:8px 14px">
+      <button class="fbtn on" onclick="setFiltroCartera('pendientes',this)">Pendientes</button>
+      <button class="fbtn" onclick="setFiltroCartera('vencidos',this)">+7 días</button>
+      <button class="fbtn" onclick="setFiltroCartera('todos',this)">Todos</button>
+    </div>
+    <div id="lista-cartera" style="padding:0 14px"></div>
+  </div>
+
+  <!-- CIERRE DE CAJA -->
+  <div id="page-cierre" class="page">
+    <!-- Selector fecha -->
+    <div class="card" style="border-color:var(--acc2);border-width:2px">
+      <div class="ct y">📊 Cierre de caja</div>
+      <div class="fg">
+        <div class="field"><label>Fecha</label><input type="date" id="cierre-fecha" onchange="renderCierre()"></div>
+      </div>
+      <button class="btn" onclick="exportarCierreExcel()" style="background:linear-gradient(135deg,#1d6f42,#2e7d32);color:#fff;margin-top:8px">📥 Exportar Excel</button>
+    </div>
+    <div id="cierre-contenido"></div>
+  </div>
+
+  <!-- CLIENTES -->
+  <div id="page-clientes" class="page">
+
+    <!-- Ranking -->
+    <div class="card" style="background:linear-gradient(135deg,#1a0a2b,#120a1f);border-color:var(--pur);border-width:2px">
+      <div class="ct" style="color:var(--pur)">🏆 Mejores clientes</div>
+      <div id="ranking-clientes"></div>
+    </div>
+
+    <!-- Alertas deuda vencida -->
+    <div class="card" style="border-color:var(--red);border-width:2px">
+      <div class="ct" style="color:var(--red)">⚠️ Deudas pendientes</div>
+      <div class="filtro-row" id="filtro-deuda">
+        <button class="fbtn on" onclick="setFiltroDeuda(7,this)">+7 días</button>
+        <button class="fbtn" onclick="setFiltroDeuda(15,this)">+15 días</button>
+        <button class="fbtn" onclick="setFiltroDeuda(30,this)">+30 días</button>
+      </div>
+      <div id="lista-deuda-vencida"></div>
+    </div>
+
+    <!-- Registrar cliente -->
+    <div class="card">
+      <div class="ct" style="color:var(--pur)">👤 Registrar cliente</div>
+      <div class="fg">
+        <div class="field fc"><label>Nombre</label><input type="text" id="cli-nombre" placeholder="Nombre completo" oninput="this.value=this.value.toUpperCase()"></div>
+        <div class="field"><label>Teléfono</label><input type="tel" id="cli-tel" placeholder="3001234567"></div>
+        <div class="field"><label>Ciudad</label><input type="text" id="cli-ciudad" placeholder="Ciudad..."></div>
+        <div class="field fc"><label>Nota</label><input type="text" id="cli-nota" placeholder="Observaciones..."></div>
+      </div>
+      <button class="btn bp" onclick="addCliente()" style="margin-top:10px">👤 Guardar cliente</button>
+    </div>
+
+    <!-- Lista -->
+    <div class="card">
+      <div class="ct" style="color:var(--pur)">Lista de clientes</div>
+      <input type="text" id="buscar-cliente-lista" placeholder="🔍 Buscar..." oninput="filtrarListaClientes(this.value)" style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:11px;padding:10px 14px;color:var(--text);font-family:'Outfit',sans-serif;font-size:14px;outline:none;margin-bottom:12px">
+      <div id="lista-clientes-reg"></div>
+    </div>
+  </div>
+
+  <!-- CREDITOS / CREDITOS -->
+  <div id="page-creditos" class="page">
+
+    <!-- Resumen cobros del dia -->
+    <div class="card" style="border-color:var(--grn);border-width:2px">
+      <div style="font-size:12px;font-weight:800;color:var(--grn);margin-bottom:10px">💰 COBROS DE HOY</div>
+      <div id="cobros-hoy-contenido">
+        <div style="font-size:12px;color:var(--muted);text-align:center">Sin cobros hoy</div>
+      </div>
+    </div>
+
+    <!-- Resumen -->
+    <div class="card" style="background:linear-gradient(135deg,#1a0a2b,#200d40);border-color:var(--pur);border-width:2px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--muted);font-weight:700">CLIENTES</div>
+          <div style="font-size:24px;font-weight:900;color:var(--pur)" id="dash-clientes">0</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--muted);font-weight:700">POR COBRAR</div>
+          <div style="font-size:20px;font-weight:900;color:var(--red)" id="dash-por-cobrar">$0</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:10px;color:var(--muted);font-weight:700">PAZ Y SALVO</div>
+          <div style="font-size:24px;font-weight:900;color:var(--grn)" id="dash-paz-salvo">0</div>
+        </div>
+      </div>
+      <input type="text" id="buscar-cliente" placeholder="🔍 Buscar cliente..." oninput="filtrarClientes(this.value)" style="width:100%;background:rgba(0,0,0,.3);border:1.5px solid rgba(206,147,216,.3);border-radius:11px;padding:12px 14px;color:var(--text);font-family:'Outfit',sans-serif;font-size:15px;font-weight:600;outline:none;margin-bottom:10px">
+      <div class="filtro-row" id="filtro-tipo-credito">
+        <button class="fbtn on" onclick="setFiltroTipoCredito('todos',this)">Todos</button>
+        <button class="fbtn" onclick="setFiltroTipoCredito('gallina',this)">🐔 Gallinas</button>
+        <button class="fbtn" onclick="setFiltroTipoCredito('huevo',this)">🥚 Huevos</button>
+      </div>
+    </div>
+
+    <!-- Lista por cliente con facturas -->
+    <div id="lista-saldos"></div>
+
+    <!-- Historial general -->
+    <div class="card">
+      <div class="ct" style="color:var(--pur)">Historial completo</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <button onclick="exportarCreditosExcel()" style="background:rgba(206,147,216,.15);border:1px solid var(--pur);color:var(--pur);border-radius:12px;padding:10px;font-family:'Outfit',sans-serif;font-weight:800;cursor:pointer">📥 Excel</button>
+        <button onclick="exportarCreditosPDF()" style="background:rgba(255,68,68,.15);border:1px solid var(--red);color:var(--red);border-radius:12px;padding:10px;font-family:'Outfit',sans-serif;font-weight:800;cursor:pointer">📄 PDF</butto
